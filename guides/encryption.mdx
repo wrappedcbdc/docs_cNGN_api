@@ -1,0 +1,443 @@
+---
+title: "How to Encrypt Requests and Decrypt cNGN Responses"
+sidebarTitle: "Encryption"
+description: "Encrypt POST and PUT request bodies with AES-256-CBC and decrypt cNGN API response payloads using your Ed25519 private key and libsodium."
+---
+
+The cNGN API encrypts payloads in both directions. Outgoing request bodies — sent on `POST` and `PUT` endpoints — must be encrypted by you using **AES-256-CBC** before they leave your server. Incoming responses have their `data` field encrypted by the API to your **Ed25519 public key**, so only you can read the result. This two-way encryption ensures that sensitive financial data is protected both in transit and at rest in logs or proxies.
+
+<Tip>
+  The official [cNGN SDKs](/sdks) handle both sides of this automatically. Read on only if you are integrating directly over HTTP without an SDK.
+</Tip>
+
+## Encrypting requests (AES-256-CBC)
+
+Every endpoint that accepts a request body expects this wire format instead of plain JSON:
+
+```json
+{
+  "content": "<base64-encoded ciphertext>",
+  "iv": "<base64-encoded 16-byte IV>"
+}
+```
+
+<Steps>
+  <Step title="Hash your encryption key">
+    SHA-256 hash your encryption key to derive a 32-byte AES key. This ensures the key is always the correct length regardless of how it was generated.
+  </Step>
+  <Step title="Generate a random IV">
+    Generate a fresh random 16-byte initialization vector (IV) for each request. Reusing IVs weakens the encryption.
+  </Step>
+  <Step title="Encrypt with AES-256-CBC">
+    Encrypt the JSON string of your payload using AES-256-CBC with the derived key and the random IV.
+  </Step>
+  <Step title="Base64-encode and send">
+    Base64-encode both the ciphertext and the IV, then send them as `content` and `iv` in the request body.
+  </Step>
+</Steps>
+
+The full `AESCrypto` class implementations are shown below. The `decrypt` method is included for local round-trip testing.
+
+<CodeGroup>
+
+```typescript TypeScript
+import {Buffer} from 'buffer';
+import * as crypto from 'crypto';
+
+export type AESEncryptionResponse = {
+    iv: string,
+    content: string
+}
+
+export class AESCrypto {
+    private static readonly ALGORITHM = 'aes-256-cbc';
+    private static readonly IV_LENGTH = 16;
+    private static readonly KEY_LENGTH = 32; // 256 bits
+
+    private static prepareKey(key: string): Buffer {
+        // Hash the key to ensure it's always the correct length
+        const hash = crypto.createHash('sha256');
+        hash.update(key);
+        return hash.digest();
+    }
+
+    public static encrypt(data: string, key: string): AESEncryptionResponse {
+        const iv = crypto.randomBytes(this.IV_LENGTH);
+        const keyBuffer = this.prepareKey(key);
+
+        const cipher = crypto.createCipheriv(this.ALGORITHM, keyBuffer, iv);
+
+        let encrypted = cipher.update(data, 'utf8', 'base64');
+        encrypted += cipher.final('base64');
+
+        return {
+            content: encrypted,
+            iv: iv.toString('base64')
+        };
+    }
+
+    public static decrypt(encryptedData: AESEncryptionResponse, key: string): string {
+        const iv = Buffer.from(encryptedData.iv, 'base64');
+        const keyBuffer = this.prepareKey(key);
+
+        const decipher = crypto.createDecipheriv(this.ALGORITHM, keyBuffer, iv);
+
+        let decrypted = decipher.update(encryptedData.content, 'base64', 'utf8');
+        decrypted += decipher.final('utf8');
+
+        return decrypted;
+    }
+}
+```
+
+```python Python
+# You have to install cryptography
+
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+import os
+import base64
+
+class AESCrypto:
+    ALGORITHM = algorithms.AES
+    IV_LENGTH = 16
+    KEY_LENGTH = 32  # 256 bits
+
+    @staticmethod
+    def prepare_key(key: str) -> bytes:
+        # Hash the key using SHA-256 to ensure it's always the correct length (32 bytes)
+        digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+        digest.update(key.encode('utf-8'))
+        return digest.finalize()
+
+    @staticmethod
+    def encrypt(data: str, key: str) -> dict:
+        # Generate a random Initialization Vector (IV)
+        iv = os.urandom(AESCrypto.IV_LENGTH)
+        key_buffer = AESCrypto.prepare_key(key)
+
+        # Create cipher and encrypt the data
+        cipher = Cipher(AESCrypto.ALGORITHM(key_buffer), modes.CBC(iv), backend=default_backend())
+        encryptor = cipher.encryptor()
+
+        # Pad data to be multiple of 16 bytes (block size for AES)
+        padding_length = 16 - (len(data) % 16)
+        padded_data = data + chr(padding_length) * padding_length
+        encrypted = encryptor.update(padded_data.encode('utf-8')) + encryptor.finalize()
+
+        # Return the encrypted content and the IV (both base64 encoded)
+        return {
+            'content': base64.b64encode(encrypted).decode('utf-8'),
+            'iv': base64.b64encode(iv).decode('utf-8')
+        }
+
+    @staticmethod
+    def decrypt(encrypted_data: dict, key: str) -> str:
+        # Decode the base64 encoded IV and content
+        iv = base64.b64decode(encrypted_data['iv'])
+        encrypted_content = base64.b64decode(encrypted_data['content'])
+        key_buffer = AESCrypto.prepare_key(key)
+
+        # Create cipher and decrypt the data
+        cipher = Cipher(AESCrypto.ALGORITHM(key_buffer), modes.CBC(iv), backend=default_backend())
+        decryptor = cipher.decryptor()
+
+        decrypted = decryptor.update(encrypted_content) + decryptor.finalize()
+
+        # Remove padding
+        padding_length = decrypted[-1]
+        decrypted = decrypted[:-padding_length]
+
+        return decrypted.decode('utf-8')
+```
+
+```php PHP
+<?php
+
+class AESCrypto
+{
+    private const ALGORITHM = 'aes-256-cbc';
+    private const IV_LENGTH = 16;
+    private const KEY_LENGTH = 32; // 256 bits
+
+    private static function prepareKey(string $key): string
+    {
+        // Hash the key to ensure it's always the correct length
+        return hash('sha256', $key, true); // returns raw binary output
+    }
+
+    public static function encrypt(string $data, string $key): array
+    {
+        // Generate a random Initialization Vector (IV)
+        $iv = openssl_random_pseudo_bytes(self::IV_LENGTH);
+        $keyBuffer = self::prepareKey($key);
+
+        // Encrypt the data using AES-256-CBC
+        $encrypted = openssl_encrypt($data, self::ALGORITHM, $keyBuffer, OPENSSL_RAW_DATA, $iv);
+
+        // Return the encrypted content and the IV (both base64 encoded)
+        return [
+            'content' => base64_encode($encrypted),
+            'iv' => base64_encode($iv)
+        ];
+    }
+
+    public static function decrypt(array $encryptedData, string $key): string
+    {
+        // Decode the base64 encoded IV and content
+        $iv = base64_decode($encryptedData['iv']);
+        $encryptedContent = base64_decode($encryptedData['content']);
+        $keyBuffer = self::prepareKey($key);
+
+        // Decrypt the data
+        $decrypted = openssl_decrypt($encryptedContent, self::ALGORITHM, $keyBuffer, OPENSSL_RAW_DATA, $iv);
+
+        return $decrypted;
+    }
+}
+```
+
+</CodeGroup>
+
+**Usage:** `AESCrypto.encrypt(JSON.stringify(payload), encryptionKey)` returns the `{ content, iv }` object to send as the request body.
+
+<Warning>
+  Sending a plain JSON body to a `POST` or `PUT` endpoint fails with `400 Missing encryption data, key, or IV`. A body that is encrypted with the wrong key or a malformed IV fails with `400 Decryption failed`. Always encrypt before sending.
+</Warning>
+
+## Decrypting responses (Ed25519 / Curve25519)
+
+Successful responses return an encrypted base64 string in the `data` field:
+
+```json
+{
+  "status": 200,
+  "message": "Balance fetched successfully",
+  "data": "kJ8vX2mN...=="
+}
+```
+
+The payload is encrypted with libsodium's `crypto_box` to your Ed25519 public key (converted internally to Curve25519). When you base64-decode the `data` string, the resulting blob has this layout:
+
+| Bytes | Content |
+| --- | --- |
+| `0` to `23` | 24-byte nonce |
+| `24` to `(n - 32)` | Ciphertext |
+| Last `32` bytes | Ephemeral public key |
+
+The `Ed25519Crypto` implementations below take your OpenSSH-format private key (the `cngn_api_key` file you generated) directly. They locate the 64-byte key data after the `0x00 0x00 0x00 0x40` length marker, convert it to Curve25519, and open the box:
+
+<CodeGroup>
+
+```typescript TypeScript
+import sodium from 'libsodium-wrappers';
+import {Buffer} from 'buffer';
+
+export class Ed25519Crypto {
+
+    private static isInitialized = false;
+
+    private static async initialize() {
+        if (!this.isInitialized) {
+            await sodium.ready;
+            this.isInitialized = true;
+        }
+    }
+
+    private static parseOpenSSHPrivateKey(privateKey: string): Uint8Array {
+        const lines = privateKey.split('\n');
+        const base64PrivateKey = lines.slice(1, -1).join('');
+        const privateKeyBuffer = Buffer.from(base64PrivateKey, 'base64');
+
+        const keyDataStart = privateKeyBuffer.indexOf(Buffer.from([0x00, 0x00, 0x00, 0x40]));
+        if (keyDataStart === -1) {
+            throw new Error('Unable to find Ed25519 key data');
+        }
+
+        return new Uint8Array(privateKeyBuffer.subarray(keyDataStart + 4, keyDataStart + 68));
+    }
+
+    public static async decryptWithPrivateKey(ed25519PrivateKey: string, encryptedData: string): Promise<string> {
+        await this.initialize();
+
+        try {
+            const fullPrivateKey = this.parseOpenSSHPrivateKey(ed25519PrivateKey);
+            const curve25519PrivateKey = sodium.crypto_sign_ed25519_sk_to_curve25519(fullPrivateKey);
+            const encryptedBuffer = Buffer.from(encryptedData, 'base64');
+
+            const nonce = encryptedBuffer.subarray(0, sodium.crypto_box_NONCEBYTES);
+            const ephemeralPublicKey = encryptedBuffer.subarray(-sodium.crypto_box_PUBLICKEYBYTES);
+            const ciphertext = encryptedBuffer.subarray(sodium.crypto_box_NONCEBYTES, -sodium.crypto_box_PUBLICKEYBYTES);
+
+            const decrypted = sodium.crypto_box_open_easy(
+                ciphertext,
+                nonce,
+                ephemeralPublicKey,
+                curve25519PrivateKey
+            );
+
+            return sodium.to_string(decrypted)
+        } catch (error) {
+            throw new Error(`Failed to decrypt with the provided Ed25519 private key: ${error}`);
+        }
+    }
+
+}
+```
+
+```python Python
+# You have to install pynacl, cryptography
+
+from nacl.public import PrivateKey, PublicKey, Box
+from nacl.encoding import Base64Encoder
+from nacl.bindings import crypto_sign_ed25519_sk_to_curve25519
+import base64
+import re
+
+class Ed25519Crypto:
+    is_initialized = False
+
+    @staticmethod
+    def initialize():
+        if not Ed25519Crypto.is_initialized:
+            # No explicit initialization is required for PyNaCl, but we keep this as a safeguard.
+            Ed25519Crypto.is_initialized = True
+
+    @staticmethod
+    def parse_openssh_private_key(private_key: str) -> bytes:
+        """
+        Parses an OpenSSH Ed25519 private key to extract the raw private key.
+
+        :param private_key: The OpenSSH private key string.
+        :return: The 64-byte Ed25519 private key as bytes.
+        """
+        # Remove the key header/footer and decode the base64 content
+        private_key_stripped = re.sub(r'-----.* PRIVATE KEY-----', '', private_key).strip()
+        private_key_stripped = re.sub(r"\s+", '', private_key_stripped)
+        private_key_buffer = base64.b64decode(private_key_stripped)
+
+        # Look for Ed25519 key data (00 00 00 40)
+        key_data_start = private_key_buffer.find(b'\x00\x00\x00\x40')
+        if key_data_start == -1:
+            raise Exception('Unable to find Ed25519 key data')
+
+        # The key starts after 0x00 0x00 0x00 0x40 (64-byte key length marker)
+        return private_key_buffer[key_data_start + 4: key_data_start + 68]
+
+    @staticmethod
+    def decrypt_with_private_key(ed25519_private_key: str, encrypted_data: str) -> str:
+        """
+        Decrypts data using an Ed25519 private key (converted to Curve25519).
+
+        :param ed25519_private_key: The OpenSSH Ed25519 private key string.
+        :param encrypted_data: The encrypted data in base64 format.
+        :return: The decrypted plaintext as a string.
+        """
+        Ed25519Crypto.initialize()
+
+        try:
+            # Parse the OpenSSH private key format and extract the Ed25519 private key
+            ed25519_private_key_bytes = Ed25519Crypto.parse_openssh_private_key(ed25519_private_key)
+
+            # Convert Ed25519 private key to Curve25519 private key for use with Box
+            curve25519_private_key_bytes = crypto_sign_ed25519_sk_to_curve25519(ed25519_private_key_bytes)
+            private_key = PrivateKey(curve25519_private_key_bytes)
+
+            # Decode the base64-encoded encrypted data
+            encrypted_buffer = base64.b64decode(encrypted_data)
+
+            # Extract nonce (24 bytes), ephemeral public key (32 bytes), and ciphertext
+            nonce = encrypted_buffer[:24]
+            ephemeral_public_key = PublicKey(encrypted_buffer[-32:])
+            ciphertext = encrypted_buffer[24:-32]
+
+            # Create a Box with the recipient's Curve25519 private key and the sender's ephemeral public key
+            box = Box(private_key, ephemeral_public_key)
+
+            # Decrypt the ciphertext
+            decrypted = box.decrypt(ciphertext, nonce)
+
+            return decrypted.decode('utf-8')
+
+        except Exception as e:
+            raise Exception("Failed to decrypt with the provided Ed25519 private key: " + str(e))
+```
+
+```php PHP
+<?php
+
+class Ed25519Crypto
+{
+    private static $isInitialized = false;
+
+    private static function initialize()
+    {
+        if (!self::$isInitialized) {
+            if (!extension_loaded('sodium')) {
+                throw new Exception("The sodium extension is not loaded");
+            }
+            self::$isInitialized = true;
+        }
+    }
+
+    private static function parseOpenSSHPrivateKey(string $privateKey): string
+    {
+        $lines = explode("\n", $privateKey);
+        $base64PrivateKey = implode('', array_slice($lines, 1, -1));
+        $privateKeyBuffer = base64_decode($base64PrivateKey);
+
+        // Look for the Ed25519 key data
+        $keyDataStart = strpos($privateKeyBuffer, pack('C*', 0x00, 0x00, 0x00, 0x40));
+        if ($keyDataStart === false) {
+            throw new Exception('Unable to find Ed25519 key data');
+        }
+
+        // Extract the key data
+        return substr($privateKeyBuffer, $keyDataStart + 4, 64);
+    }
+
+    public static function decryptWithPrivateKey(string $ed25519PrivateKey, string $encryptedData): string
+    {
+        self::initialize();
+
+        try {
+            $fullPrivateKey = self::parseOpenSSHPrivateKey($ed25519PrivateKey);
+            // Convert Ed25519 private key to Curve25519 private key
+            $curve25519PrivateKey = sodium_crypto_sign_ed25519_sk_to_curve25519($fullPrivateKey);
+            $encryptedBuffer = base64_decode($encryptedData);
+
+            // Extract nonce, ephemeral public key, and ciphertext
+            $nonce = substr($encryptedBuffer, 0, SODIUM_CRYPTO_BOX_NONCEBYTES);
+            $ephemeralPublicKey = substr($encryptedBuffer, -SODIUM_CRYPTO_BOX_PUBLICKEYBYTES);
+            $ciphertext = substr($encryptedBuffer, SODIUM_CRYPTO_BOX_NONCEBYTES, -SODIUM_CRYPTO_BOX_PUBLICKEYBYTES);
+
+            $keyPair = sodium_crypto_box_keypair_from_secretkey_and_publickey($curve25519PrivateKey, $ephemeralPublicKey);
+
+            // Decrypt the ciphertext
+            $decrypted = sodium_crypto_box_open($ciphertext, $nonce, $keyPair);
+
+            if ($decrypted === false) {
+                throw new Exception('Decryption failed');
+            }
+
+            return $decrypted;
+        } catch (Exception $e) {
+            throw new Exception("Failed to decrypt with the provided Ed25519 private key: " . $e->getMessage());
+        }
+    }
+}
+```
+
+</CodeGroup>
+
+**Usage:** `Ed25519Crypto.decryptWithPrivateKey(privateKeyFileContents, response.data)` returns the decrypted JSON string. Parse it with `JSON.parse()` (or your language's equivalent) to access the payload.
+
+## Key management summary
+
+| Key | Direction | Where it lives |
+| --- | --- | --- |
+| API key (`cngn_test...` / `cngn_live...`) | Request authentication | Your server environment + dashboard |
+| Encryption key (AES) | Request body encryption (outbound) | Your server environment + dashboard |
+| Ed25519 public key | Response encryption — API side (inbound) | Uploaded to the dashboard; safe to share |
+| Ed25519 private key | Response decryption — your side (inbound) | Your server only; **never share or upload** |

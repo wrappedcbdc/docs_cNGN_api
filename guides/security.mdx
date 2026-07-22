@@ -1,0 +1,124 @@
+---
+title: "cNGN API Security Overview, Layers, and Best Practices"
+sidebarTitle: "Overview"
+description: "A three-layer security model — API key auth, IP whitelisting, and end-to-end payload encryption — protects every cNGN API integration you build."
+icon: "shield-halved"
+---
+
+All communication between your application and the cNGN platform is protected end-to-end. Every request payload is encrypted with AES-256-CBC, every response is encrypted to your Ed25519 public key, and all traffic is gated behind API-key authentication and IP whitelisting. Together, these three layers ensure that only your server can send valid requests and only your server can read the responses.
+
+<Warning>
+  Safeguard your **encryption key** and **Ed25519 private key** at all times. Never expose them in client-side code, mobile apps, or public repositories. Anyone holding them can read your API traffic.
+</Warning>
+
+## The three security layers
+
+<CardGroup cols={3}>
+  <Card title="API Key" icon="key" href="/guides/authentication">
+    A Bearer token that identifies your business and selects the correct environment — test or live — for every request.
+  </Card>
+  <Card title="IP Whitelisting" icon="shield" href="/guides/authentication#ip-whitelisting">
+    Only requests from server IPs you have explicitly whitelisted are accepted. All others are rejected outright.
+  </Card>
+  <Card title="Payload Encryption" icon="lock" href="/guides/encryption">
+    Request bodies are AES-256-CBC encrypted before sending; response payloads are Ed25519 encrypted so only your private key can decrypt them.
+  </Card>
+</CardGroup>
+
+## Setting up secure communication
+
+Follow these steps in order before making your first API call. Skipping any step will result in authentication or decryption errors.
+
+<Steps>
+  <Step title="Generate API and encryption keys" icon="key">
+    Log in to the cNGN merchant dashboard and navigate to **Settings → API Keys** to retrieve your auto-generated credentials:
+
+    - **API key** (`cngn_test...` or `cngn_live...`) — sent as your Bearer token on every request
+    - **Encryption key** — used to AES-256-CBC encrypt all request bodies
+
+    Copy both keys immediately after generation and store them in a secrets manager. Treat them with the same care as passwords — they are shown only once.
+
+    <Card title="Generating API Keys" icon="key" href="/guides/security/generating-api-keys" horizontal>
+      Step-by-step walkthrough of the merchant dashboard for test and live key generation.
+    </Card>
+  </Step>
+
+  <Step title="Generate an Ed25519 SSH key pair" icon="terminal">
+    cNGN encrypts every API response to your Ed25519 public key, so you must generate a key pair on your server before you can decrypt responses. Run the following command in your terminal:
+
+    ```bash
+    ssh-keygen -t ed25519 -C "api@yourcompany.com" -f cngn_api_key
+    ```
+
+    This creates two files in your current directory:
+
+    | File | Role | Handling |
+    |---|---|---|
+    | `cngn_api_key` | Private key — decrypts API responses | Keep on your server only |
+    | `cngn_api_key.pub` | Public key — encrypts responses to you | Upload to the dashboard |
+
+    <Card title="Generating SSH Keys" icon="terminal" href="/guides/security/generating-ssh-keys" horizontal>
+      Detailed key generation and clipboard copy commands for macOS, Linux, and Windows.
+    </Card>
+  </Step>
+
+  <Step title="Upload your public key to the dashboard" icon="upload">
+    Open `cngn_api_key.pub` and paste its full contents into the SSH key slot for the matching environment in your merchant dashboard. Each environment has its own dedicated slot:
+
+    - **Test** — paste the public key you intend to use for sandbox testing
+    - **Live** — paste the public key tied to your production server
+
+    If the slot is empty when you make a request, the API returns one of these errors:
+
+    - `No Test SSH Key found`
+    - `No Live SSH Key found`
+  </Step>
+
+  <Step title="Encrypt requests and decrypt responses" icon="lock">
+    With your keys in place, wire the cryptography into your integration — or let an [official SDK](/sdks) handle it automatically:
+
+    - **Outbound:** encrypt every `POST` and `PUT` request body into the `{ content, iv }` format using your encryption key
+    - **Inbound:** decrypt the `data` field of every response using your Ed25519 private key
+
+    Full implementation examples for both directions are in the [Encryption guide](/guides/encryption).
+  </Step>
+</Steps>
+
+## Credential handling rules
+
+Use this table as a quick reference whenever you are unsure how to handle a particular credential.
+
+| Credential | Share with cNGN? | Commit to git? | Client-side? |
+|---|---|---|---|
+| API key | Never (dashboard issues it) | Never | Never |
+| Encryption key | Never (dashboard issues it) | Never | Never |
+| Ed25519 private key | Never | Never | Never |
+| Ed25519 public key | Yes — upload via dashboard | Acceptable | Acceptable |
+
+## Best practices
+
+<AccordionGroup>
+  <Accordion title="Store secrets in a secrets manager" icon="vault">
+    Use a dedicated secrets manager — such as AWS Secrets Manager, HashiCorp Vault, or Doppler — rather than `.env` files checked into your repository. Scope read access only to the services that call the API, so a compromised dependency cannot harvest your credentials.
+  </Accordion>
+
+  <Accordion title="Rotate keys on exposure or staff changes" icon="rotate">
+    If a key may have leaked, or a team member with access leaves, regenerate your API and encryption keys in the dashboard and replace your SSH key pair immediately. Old keys stop working the moment new ones are issued, so coordinate the rotation with your deployment to avoid downtime.
+  </Accordion>
+
+  <Accordion title="Keep the IP whitelist tight" icon="list-check">
+    Whitelist only the egress IPs that actively call the API, and remove stale entries when infrastructure is decommissioned. A short, accurate whitelist limits the blast radius of a leaked key — requests from unlisted IPs are rejected even if the attacker holds a valid API key.
+  </Accordion>
+
+  <Accordion title="Separate test and live credentials" icon="flask">
+    Never configure a production service with `cngn_test` keys, or a staging service with `cngn_live` keys. Keep the two credential sets in separate secret scopes so that a misconfiguration cannot accidentally cross environments or move real funds.
+  </Accordion>
+
+  <Accordion title="Monitor for anomalies in transaction history" icon="chart-line">
+    Review your [transaction history](/api-reference/get-transactions) regularly for transfers you did not initiate. Set up alerts for repeated `403` responses or `Decryption failed` errors — these patterns can indicate credential probing or a misconfigured key.
+  </Accordion>
+</AccordionGroup>
+
+<Check>
+  Keys generated, public key uploaded, and secrets locked away in a secrets manager? Continue to the [Encryption guide](/guides/encryption) to wire up payload crypto, then verify everything is in order with the [Going Live Checklist](/going-live).
+</Check>

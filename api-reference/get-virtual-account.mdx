@@ -1,0 +1,83 @@
+---
+title: "GET /virtual-account — Retrieve Your Virtual Account"
+sidebarTitle: "Get Virtual Account"
+api: "GET https://api.cngn.co/v1/api/virtual-account"
+description: "Retrieve the dedicated virtual bank account(s) assigned to your business. Naira deposited here is automatically converted and credited as cNGN."
+---
+
+When your business is onboarded, cNGN assigns you one or more dedicated virtual bank accounts. Any Naira transferred into these accounts is automatically swept and credited to your wallet as cNGN — no manual conversion step required. This endpoint returns the full list of those accounts so you can display them to your users or automate deposit instructions.
+
+<Note>
+  This endpoint requires the **Fiat Deposit** permission on your API key. Contact support if you receive a `403 Permission denied` response.
+</Note>
+
+## Response fields
+
+<ResponseField name="data" type="object[]">
+  Array of virtual account objects assigned to your business.
+  <Expandable title="Account object">
+    <ResponseField name="accountNumber" type="string">
+      10-digit NUBAN account number. Share this with anyone making a Naira deposit on your behalf.
+    </ResponseField>
+    <ResponseField name="accountName" type="string">
+      The account name as registered with the bank — typically your business name.
+    </ResponseField>
+    <ResponseField name="bankName" type="string">
+      Full name of the bank hosting this virtual account.
+    </ResponseField>
+    <ResponseField name="bankCode" type="string">
+      CBN-assigned bank code for the hosting bank.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Warning>
+  The `data` field in the raw API response is Ed25519-encrypted and base64-encoded. You must decrypt it before use. The examples below show the **decrypted** payload for clarity.
+</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.cngn.co/v1/api/virtual-account" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```typescript TypeScript
+const response = await fetch("https://api.cngn.co/v1/api/virtual-account", {
+  method: "GET",
+  headers: {
+    Authorization: `Bearer ${process.env.CNGN_API_KEY}`,
+  },
+});
+
+const { data: encrypted } = await response.json();
+// Decrypt `encrypted` using your Ed25519 private key before use
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 - Success (data shown decrypted)
+{
+  "status": 200,
+  "message": "Virtual account created successfully",
+  "data": [
+    {
+      "accountNumber": "9977581222",
+      "accountName": "ACME LTD / CNGN",
+      "bankName": "Providus Bank",
+      "bankCode": "101"
+    }
+  ]
+}
+```
+
+```json 403 - Permission denied
+{
+  "status": false,
+  "message": "Permission denied"
+}
+```
+
+</ResponseExample>

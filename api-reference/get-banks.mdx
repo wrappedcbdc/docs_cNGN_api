@@ -1,0 +1,69 @@
+---
+title: "GET /banks — List Supported Nigerian Banks and Codes"
+sidebarTitle: "Get Banks"
+api: "GET https://api.cngn.co/v1/api/banks"
+description: "Retrieve all Nigerian banks supported for cNGN redemptions and account verification, including their CBN bank codes to use in other endpoints."
+---
+
+Before you can redeem cNGN or verify a bank account, you need the correct CBN bank code for the destination bank. This endpoint returns every bank currently supported by cNGN, along with the `code` value you should pass as `bankCode` in the [Redeem Asset](/api-reference/redeem-asset) and [Verify Account Details](/api-reference/verify-account-details) endpoints.
+
+<Tip>
+  The list of supported banks changes rarely. Cache the response for several hours rather than fetching it on every request — this keeps your integration fast and avoids unnecessary API calls.
+</Tip>
+
+## Response fields
+
+<ResponseField name="data" type="object[]">
+  Array of supported bank objects.
+  <Expandable title="Bank object">
+    <ResponseField name="name" type="string">
+      Full name of the bank as registered with the CBN.
+    </ResponseField>
+    <ResponseField name="code" type="string">
+      CBN-assigned bank code. Pass this value as `bankCode` in [Redeem Asset](/api-reference/redeem-asset) and [Verify Account Details](/api-reference/verify-account-details).
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<Warning>
+  The `data` field in the raw API response is Ed25519-encrypted and base64-encoded. Decrypt it before use. The examples below show the **decrypted** payload.
+</Warning>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.cngn.co/v1/api/banks" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```typescript TypeScript
+const response = await fetch("https://api.cngn.co/v1/api/banks", {
+  method: "GET",
+  headers: {
+    Authorization: `Bearer ${process.env.CNGN_API_KEY}`,
+  },
+});
+
+const { data: encrypted } = await response.json();
+// Decrypt `encrypted` using your Ed25519 private key
+// Cache the resulting bank list for several hours
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 - Success (data shown decrypted)
+{
+  "status": 200,
+  "message": "Banks fetched successfully",
+  "data": [
+    { "name": "Access Bank", "code": "044" },
+    { "name": "Guaranty Trust Bank", "code": "058" },
+    { "name": "United Bank for Africa", "code": "033" },
+    { "name": "Zenith Bank", "code": "057" }
+  ]
+}
+```
+
+</ResponseExample>

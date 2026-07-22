@@ -1,0 +1,62 @@
+---
+title: "Supported Blockchain Networks for cNGN Withdrawals"
+sidebarTitle: "Networks"
+description: "Fetch environment-specific network IDs, explore all supported chains for cNGN, and learn how to reference the correct networkId in API calls."
+---
+
+cNGN is issued on multiple blockchain networks simultaneously. Whenever you make a request that moves value on-chain — such as [Withdraw](/api-reference/withdraw), [Bridge](/api-reference/bridge), or [Whitelist Address](/api-reference/whitelist-address) — you identify the target chain using a `networkId` field. Understanding how network IDs work, and how to retrieve them correctly for your environment, is essential before you start integrating any on-chain operations.
+
+## Getting network IDs
+
+Network IDs are **environment-specific database identifiers**, not fixed enums or chain IDs. The same blockchain (for example, Polygon) will have a different `id` in your test environment than in your live environment. This means you must never hard-code a network ID.
+
+Always fetch the current list at runtime or during integration setup by calling [Get Networks](/api-reference/get-networks):
+
+```bash
+curl -X GET "https://api.cngn.co/v1/api/networks" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+After decrypting the response, the payload looks like this:
+
+```json
+[
+  {
+    "id": "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
+    "name": "Base",
+    "short_name": "BASE",
+    "isDisabled": false,
+    "blockchain": null
+  },
+  {
+    "id": "1f2e3d4c-5b6a-7988-9a0b-c1d2e3f4a5b6",
+    "name": "Polygon",
+    "short_name": "POLYGON",
+    "isDisabled": false,
+    "blockchain": null
+  }
+]
+```
+
+Use the `id` value as the `networkId` in subsequent requests. If you need additional metadata about the underlying blockchain, pass `?includeBlockchain=true` to include the `blockchain` object in each network entry.
+
+<Warning>
+  Never hard-code network IDs across environments. Your test and live environments have different IDs for the same chain. Always resolve IDs per environment at startup or from a short-lived cache, and never copy a network ID from a test integration into a production deployment.
+</Warning>
+
+## Supported chains
+
+cNGN is deployed across a broad range of blockchain ecosystems. The table below shows every chain where cNGN is supported or planned:
+
+| Ecosystem | Networks |
+| --- | --- |
+| **EVM** | Ethereum, BNB Smart Chain, Polygon, Base, Asset Chain, Lisk, Monad, Arc |
+| **Tron** | Tron |
+| **Solana** | Solana (SPL token) |
+| **Bantu** | Bantu (XBN, Stellar-based) |
+
+The authoritative list for your specific environment is always the [Get Networks](/api-reference/get-networks) response — chains may be added or temporarily disabled without notice. Networks with `isDisabled: true` in the response **cannot be used** for withdrawals or bridging until re-enabled.
+
+## Contract addresses
+
+Verified cNGN token contract addresses for every chain — both mainnet and testnet — are listed on the [Contract Addresses](/guides/contract-addresses) page. Always verify contract addresses from the official source before interacting with the token on-chain.

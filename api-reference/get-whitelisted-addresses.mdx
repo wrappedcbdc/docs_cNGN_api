@@ -1,0 +1,117 @@
+---
+title: "GET /whitelisted — List All Whitelisted Wallet Addresses"
+sidebarTitle: "Get Whitelisted"
+api: "GET https://api.cngn.co/v1/api/whitelisted"
+description: "Retrieve every external wallet address whitelisted on your account, across all networks, with an option to embed full network details in each entry."
+---
+
+Use this endpoint to fetch a complete list of every external wallet address you have whitelisted across all networks. This is useful for displaying saved destinations in your UI, verifying that an address exists before initiating a withdrawal, or auditing your account's allowed recipients. Pass `includeNetwork=true` to embed a network summary object directly in each entry — otherwise only the `networkId` string is returned. No request body is required, and the response is not paginated.
+
+<Note>
+  The `data` field in every response is Ed25519-encrypted. The examples on this page show the **decrypted** payload for readability.
+</Note>
+
+## Query parameters
+
+<ParamField query="includeNetwork" type="boolean" default="false">
+  When `true`, each address entry includes a `network` object containing the network's `id`, `name`, and `short_name`. Useful for display purposes without a separate [Get Networks](/api-reference/get-networks) call.
+</ParamField>
+
+## Response
+
+Returns an array of whitelisted address objects. Each object has the same shape as entries returned by [Whitelist Address](/api-reference/whitelist-address).
+
+<ResponseField name="data" type="object[]">
+  <Expandable title="Whitelisted address object">
+    <ResponseField name="id" type="string">
+      Unique identifier for this whitelist entry.
+    </ResponseField>
+    <ResponseField name="networkId" type="string">
+      ID of the network this address is registered on.
+    </ResponseField>
+    <ResponseField name="publicKey" type="string">
+      The whitelisted external wallet address.
+    </ResponseField>
+    <ResponseField name="internalPublicKey" type="string">
+      Internal deposit address paired to this whitelist entry by cNGN.
+    </ResponseField>
+    <ResponseField name="network" type="object">
+      Present only when `includeNetwork=true`.
+      <Expandable title="network">
+        <ResponseField name="id" type="string">Network UUID.</ResponseField>
+        <ResponseField name="name" type="string">Full network name, e.g. `"Base"`.</ResponseField>
+        <ResponseField name="short_name" type="string">Network ticker, e.g. `"BASE"`.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="created_at" type="string">
+      ISO 8601 timestamp when the entry was created.
+    </ResponseField>
+    <ResponseField name="updated_at" type="string">
+      ISO 8601 timestamp of the most recent update to this entry.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<RequestExample>
+
+```bash cURL
+curl -X GET "https://api.cngn.co/v1/api/whitelisted?includeNetwork=true" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+
+```typescript TypeScript
+const res = await fetch(
+  "https://api.cngn.co/v1/api/whitelisted?includeNetwork=true",
+  {
+    headers: { Authorization: `Bearer ${API_KEY}` },
+  }
+);
+
+const { data } = await res.json();
+// Decrypt `data` with your Ed25519 private key to read the address list
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 - Success with includeNetwork=true (data shown decrypted)
+{
+  "status": 200,
+  "message": "Whitelisted addresses fetched successfully",
+  "data": [
+    {
+      "id": "7a8b9c0d-1e2f-4a3b-9c4d-5e6f7a8b9c0d",
+      "networkId": "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
+      "publicKey": "0xAbCdEf1234567890AbCdEf1234567890AbCdEf12",
+      "internalPublicKey": "0x3cD4e5F6a7B8c9D0e1F2a3B4c5D6e7F8a9B0c1D2",
+      "network": {
+        "id": "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
+        "name": "Base",
+        "short_name": "BASE"
+      },
+      "created_at": "2026-07-22T10:15:00.000Z",
+      "updated_at": "2026-07-22T10:15:00.000Z"
+    }
+  ]
+}
+```
+
+```json 200 - Success with includeNetwork=false (data shown decrypted)
+{
+  "status": 200,
+  "message": "Whitelisted addresses fetched successfully",
+  "data": [
+    {
+      "id": "wl_abc123",
+      "networkId": "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
+      "publicKey": "0xAbCdEf1234567890AbCdEf1234567890AbCdEf12",
+      "internalPublicKey": "0x3cD4e5F6a7B8c9D0e1F2a3B4c5D6e7F8a9B0c1D2",
+      "created_at": "2024-11-15T10:15:00.000Z",
+      "updated_at": "2024-11-15T10:15:00.000Z"
+    }
+  ]
+}
+```
+
+</ResponseExample>

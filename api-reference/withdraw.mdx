@@ -1,0 +1,109 @@
+---
+title: "POST /withdraw — Send cNGN to an External Wallet"
+sidebarTitle: "Withdraw"
+api: "POST https://api.cngn.co/v1/api/withdraw"
+description: "Send cNGN from your business balance to an external wallet on a supported network. Requires the Send Crypto permission and an encrypted request body."
+---
+
+Use this endpoint to send cNGN from your business balance to an external wallet on any supported network. Before calling it, ensure the **Send Crypto** permission is enabled on your API key. Your request body must be AES-256-CBC encrypted and sent as `{ content, iv }` — see the [Encryption guide](/guides/encryption) for how to prepare the payload. Depending on your account configuration, the destination address may also need to be [whitelisted](/api-reference/whitelist-address) before the withdrawal is accepted. Once the withdrawal is submitted, use the returned `trxRef` with [Verify Withdrawal](/api-reference/verify-withdrawal) to track its on-chain settlement.
+
+<Note>
+  The `data` field in every response is Ed25519-encrypted. The examples on this page show the **decrypted** payload for readability.
+</Note>
+
+## Request body
+
+The fields below describe the **plain JSON object you encrypt before sending**. Do not send these fields directly — wrap the encrypted result in `{ "content": "<ciphertext>", "iv": "<iv>" }`.
+
+<ParamField body="amount" type="number" required>
+  Amount of cNGN to withdraw. Must be a positive number.
+</ParamField>
+
+<ParamField body="address" type="string" required>
+  Destination wallet address on the target network.
+</ParamField>
+
+<ParamField body="networkId" type="string" required>
+  ID of the target network. Retrieve valid IDs from [Get Networks](/api-reference/get-networks).
+</ParamField>
+
+<ParamField body="shouldSaveAddress" type="boolean" default="false">
+  When `true`, saves the destination address to your whitelist for future withdrawals.
+</ParamField>
+
+## Response
+
+<ResponseField name="trxRef" type="string">
+  Unique withdrawal transaction reference. Pass this value to [Verify Withdrawal](/api-reference/verify-withdrawal) to poll for on-chain confirmation.
+</ResponseField>
+
+<ResponseField name="address" type="string">
+  Destination wallet address the withdrawal was dispatched to.
+</ResponseField>
+
+<RequestExample>
+
+```json Plain body (encrypt before sending)
+{
+  "amount": 5000,
+  "address": "0xAbCdEf1234567890AbCdEf1234567890AbCdEf12",
+  "networkId": "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
+  "shouldSaveAddress": false
+}
+```
+
+```bash cURL
+curl -X POST "https://api.cngn.co/v1/api/withdraw" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "<base64 AES-256-CBC ciphertext of the plain body>",
+    "iv": "<base64 16-byte IV>"
+  }'
+```
+
+```typescript TypeScript
+const payload = JSON.stringify({
+  amount: 5000,
+  address: "0xAbCdEf1234567890AbCdEf1234567890AbCdEf12",
+  networkId: "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
+  shouldSaveAddress: false,
+});
+
+// Encrypt `payload` with AES-256-CBC, then send:
+const res = await fetch("https://api.cngn.co/v1/api/withdraw", {
+  method: "POST",
+  headers: {
+    Authorization: `Bearer ${API_KEY}`,
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ content: encryptedContent, iv: encryptedIv }),
+});
+
+const { data } = await res.json();
+// Decrypt `data` with your Ed25519 private key to read trxRef
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 - Success (data shown decrypted)
+{
+  "status": 200,
+  "message": "Withdrawal was successfully",
+  "data": {
+    "trxRef": "WD-7f3a2b1c",
+    "address": "0xAbCdEf1234567890AbCdEf1234567890AbCdEf12"
+  }
+}
+```
+
+```json 403 - Permission denied
+{
+  "status": false,
+  "message": "Permission denied"
+}
+```
+
+</ResponseExample>

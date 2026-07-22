@@ -1,0 +1,126 @@
+{
+  "projectType": "api-service",
+  "projectName": "cNGN",
+  "projectDescription": "cNGN is a regulated Naira-backed stablecoin API that lets businesses mint, redeem, transfer, and bridge cNGN across multiple blockchain networks with fiat on-ramps and off-ramps through Nigerian bank accounts.",
+  "theme": "luma",
+  "primaryColor": "#5620C8",
+  "lightColor": "#9D74F0",
+  "darkColor": "#43199C",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "sdks",
+              "going-live"
+            ]
+          },
+          {
+            "group": "Integration Guides",
+            "pages": [
+              "guides/authentication",
+              "guides/encryption",
+              "guides/response-format",
+              "guides/permissions",
+              "guides/rate-limits",
+              "guides/networks",
+              "guides/contract-addresses",
+              "guides/errors"
+            ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "guides/security",
+              "guides/security/generating-api-keys",
+              "guides/security/generating-ssh-keys"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Wallet",
+            "pages": [
+              "api-reference/get-balance",
+              "api-reference/get-transactions",
+              "api-reference/get-networks"
+            ]
+          },
+          {
+            "group": "Deposits",
+            "pages": [
+              "api-reference/get-virtual-account",
+              "api-reference/create-temporary-virtual-account"
+            ]
+          },
+          {
+            "group": "Redemptions",
+            "pages": [
+              "api-reference/redeem-asset",
+              "api-reference/verify-account-details",
+              "api-reference/get-banks",
+              "api-reference/update-bank-account"
+            ]
+          },
+          {
+            "group": "On-Chain Transfers",
+            "pages": [
+              "api-reference/withdraw",
+              "api-reference/verify-withdrawal",
+              "api-reference/bridge-quote",
+              "api-reference/bridge"
+            ]
+          },
+          {
+            "group": "Address Whitelisting",
+            "pages": [
+              "api-reference/whitelist-address",
+              "api-reference/get-whitelisted-addresses"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Naira-backed regulated stablecoin (cNGN) with institutional-grade security",
+    "Fiat on-ramp via dedicated and temporary virtual Nigerian bank accounts",
+    "Fiat off-ramp: redeem cNGN to any Nigerian bank account",
+    "On-chain withdrawals to whitelisted external wallet addresses",
+    "Cross-chain bridge to move cNGN across EVM, Tron, Solana, and Bantu networks",
+    "AES-256-CBC request encryption and Ed25519 response encryption",
+    "Test and live environments with environment-scoped API keys",
+    "Official SDKs for TypeScript, Python, PHP, and Java"
+  ],
+  "publicApiSurface": [
+    "GET  /balance — retrieve cNGN balance",
+    "GET  /transactions — paginated transaction history",
+    "GET  /networks — list supported blockchain networks",
+    "GET  /virtual-account — get dedicated virtual bank account",
+    "POST /virtual-account/temporary — create one-time virtual account",
+    "POST /redeemAsset — redeem cNGN to Naira",
+    "POST /account/verify — verify Nigerian bank account details",
+    "GET  /banks — list supported banks",
+    "PUT  /bank-account — update settlement bank account",
+    "POST /withdraw — withdraw cNGN to external wallet",
+    "GET  /withdraw/verify/{tnxRef} — verify withdrawal status",
+    "POST /bridge-quote — get cross-chain bridge fee quote",
+    "POST /bridge — bridge cNGN between networks",
+    "POST /whitelist — whitelist external wallet address",
+    "GET  /whitelisted — list whitelisted addresses"
+  ]
+}

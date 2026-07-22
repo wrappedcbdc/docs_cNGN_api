@@ -1,0 +1,96 @@
+---
+title: "Going Live: Complete Production Readiness Checklist"
+sidebarTitle: "Going Live"
+description: "Work through every phase of this checklist — onboarding, platform setup, technical integration, and compliance — before switching to your live API key."
+icon: "clipboard-check"
+---
+
+Moving from the sandbox to production is not just a key swap. It involves business verification, infrastructure hardening, compliance controls, and team readiness. Work through each phase in order — most launch-day incidents trace back to a skipped item on this list.
+
+<Warning>
+The live environment has its own **separate credentials** from test: a different API key, a different AES encryption key, and a separate SSH key slot for your Ed25519 public key. Test credentials will not work in production. You must complete the key setup steps again for your live environment.
+</Warning>
+
+<Steps>
+
+<Step title="Merchant onboarding">
+
+Complete your business verification with the cNGN compliance team before anything else. Live API keys are not issued until onboarding is fully approved.
+
+- Complete the Know-Your-Business (KYB) process with the cNGN team
+- Submit all required business documents (certificate of incorporation, ownership structure, etc.)
+- Complete identity verification for all account owners and directors
+- Pay the associated onboarding and platform fees
+
+<Note>
+Start the onboarding process as early as possible. Document review and KYB approval can take several business days depending on the complexity of your business structure and the completeness of your submission.
+</Note>
+
+</Step>
+
+<Step title="Platform setup">
+
+Once your merchant account is approved, configure your dashboard for secure day-to-day operations before writing any code.
+
+- Set up admin users and assign role-based access so each team member has only the permissions their role requires (see [Permissions](/guides/permissions))
+- Whitelist every withdrawal address your platform will use for authorised crypto transfers ([Whitelist Address](/api-reference/whitelist-address))
+- Add your business bank accounts — they must match the registered KYB entity name exactly ([Update Bank Account](/api-reference/update-bank-account))
+- Enable multi-factor authentication (MFA) for every dashboard user, especially those with admin or approver roles
+
+</Step>
+
+<Step title="Technical integration">
+
+Verify your integration thoroughly in the test environment before touching any live credentials. Every item below must be confirmed for the **live** environment specifically.
+
+- Add all production server IP addresses — including NAT gateways, load balancers, and serverless egress ranges — to the IP whitelist ([Authentication](/guides/authentication#ip-whitelisting))
+- Generate a new Ed25519 SSH key pair dedicated to your live environment ([Quickstart](/quickstart#ed25519-key-setup))
+- Upload the live SSH public key to the merchant dashboard under the live environment's key slot
+- Generate your live API key and live AES encryption key from the dashboard, and store both immediately in your secrets manager (AWS Secrets Manager, HashiCorp Vault, or equivalent) — never in source code or environment files committed to a repository
+- Integrate request encryption and response decryption in your application ([Encryption](/guides/encryption)), or install and configure an [official SDK](/sdks) for your language
+- Configure your production webhook URL and set a webhook signing secret to receive event notifications
+- Run a full end-to-end test covering deposits, withdrawals, redemptions, and bridge operations using your `cngn_test` key before going further
+- Swap the API key in your production deployment from `cngn_test_...` to `cngn_live_...` as the final step
+
+<Warning>
+Do not mix test and live credentials in the same deployment. Use separate environment configurations — for example, `.env.test` and `.env.production` — and ensure your CI/CD pipeline never promotes test keys to production infrastructure.
+</Warning>
+
+</Step>
+
+<Step title="Compliance">
+
+Confirm that your regulatory and monitoring controls are active before the first real transaction is processed.
+
+- Review your anti-money laundering (AML) policy and confirm it covers cNGN transactions, including deposit and withdrawal thresholds
+- Review your counter-terrorism financing (CFT) policy and confirm it aligns with the cNGN regulatory framework
+- Enable real-time transaction monitoring dashboards so your compliance team has visibility from day one
+- Set up automated alerts for suspicious activity patterns, large single transactions, and unusual account behaviour
+
+</Step>
+
+<Step title="Communication">
+
+Prepare both your customers and your internal team before you open the platform to live transactions.
+
+- Set up customer support channels (email, chat, or ticketing system) so users can report issues with cNGN deposits or withdrawals promptly
+- Brief your internal operations, finance, and support teams on launch procedures, expected transaction flow, and escalation paths
+- Publish or update your FAQ documentation to explain how cNGN deposits, withdrawals, and redemptions work for your end users
+
+</Step>
+
+<Step title="Post-launch monitoring">
+
+Stay close to the integration during the first days and weeks. Early issues are much easier to resolve when caught quickly.
+
+- Monitor first-day transactions in real time and investigate any unexpected failures or error codes ([Get Transactions](/api-reference/get-transactions), [Error Reference](/guides/errors))
+- Schedule weekly check-ins with your cNGN onboarding contact during the initial launch window
+- Establish sub-admin roles for transaction approvals as your team scales, so no single account becomes a bottleneck or single point of failure
+
+</Step>
+
+</Steps>
+
+<Check>
+All boxes ticked? Your integration is verified, your credentials are live, your compliance controls are active, and your team is ready. You are good to go. If anything behaves unexpectedly after switching to live keys, start with the [Error Reference](/guides/errors) and reach out to your cNGN onboarding contact.
+</Check>

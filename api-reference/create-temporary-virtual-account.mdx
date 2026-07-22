@@ -1,0 +1,187 @@
+---
+title: "POST /virtual-account/temporary — One-Time Deposit Account"
+sidebarTitle: "Create Temp Account"
+api: "POST https://api.cngn.co/v1/api/virtual-account/temporary"
+description: "Create a short-lived virtual account tied to a specific expected amount — ideal for checkout flows where each payment needs its own account number."
+---
+
+When you need to accept a one-off Naira deposit from a specific customer — for example, at checkout — you can generate a temporary virtual account locked to that exact amount. The account is active until `expiresAt`; any deposit received after that timestamp will not be credited. This keeps your deposit flow clean and auditable, with each payment linked to a distinct account number and customer reference.
+
+<Note>
+  This endpoint requires the **Fiat Deposit** permission on your API key. The request body must be **AES-256-CBC encrypted** before sending. See the [Encryption guide](/guides/encryption) for implementation details.
+</Note>
+
+## Body parameters
+
+Send the plain JSON body below through AES-256-CBC encryption and POST the resulting `{ content, iv }` object.
+
+<ParamField body="amount" type="number" required>
+  Expected deposit amount in Naira. Minimum value is `100`. The customer must transfer this exact amount to trigger a successful match.
+</ParamField>
+
+<ParamField body="customer" type="object" required>
+  Details of the customer making the deposit.
+  <Expandable title="properties">
+    <ParamField body="customer.email" type="string" required>
+      Customer's email address. Used to associate the deposit with a specific user in your system.
+    </ParamField>
+    <ParamField body="customer.name" type="string">
+      Customer's full name. Optional but recommended for reconciliation and support.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="accountName" type="string">
+  Custom display name for the temporary account (3–50 characters). Defaults to a system-generated name if omitted.
+</ParamField>
+
+<ParamField body="narration" type="string">
+  Payment narration shown on the bank transfer (max 100 characters). Use this to attach an order reference or customer note.
+</ParamField>
+
+## Response fields
+
+<ResponseField name="accountNumber" type="string">
+  Temporary 10-digit NUBAN account number. Provide this to your customer to make the deposit.
+</ResponseField>
+
+<ResponseField name="bankName" type="string">
+  Name of the bank hosting this temporary account.
+</ResponseField>
+
+<ResponseField name="bankCode" type="string">
+  CBN bank code for the hosting bank.
+</ResponseField>
+
+<ResponseField name="amount" type="number">
+  The deposit amount the customer should transfer, in Naira.
+</ResponseField>
+
+<ResponseField name="accountName" type="string">
+  Display name shown on the temporary account.
+</ResponseField>
+
+<ResponseField name="expiresAt" type="string">
+  ISO 8601 timestamp indicating when the account expires. Deposits received after this time will not be credited.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current deposit status (e.g. `pending`).
+</ResponseField>
+
+<ResponseField name="narration" type="string">
+  Narration attached to the temporary account, echoed back from your request.
+</ResponseField>
+
+<ResponseField name="reference" type="string">
+  Your internal deposit reference for tracking this transaction.
+</ResponseField>
+
+<Warning>
+  The `data` field in the raw API response is Ed25519-encrypted and base64-encoded. Decrypt it before use. The examples below show the **decrypted** payload.
+</Warning>
+
+<RequestExample>
+
+```json Plain body (encrypt before sending)
+{
+  "amount": 50000,
+  "customer": {
+    "name": "Ada Obi",
+    "email": "ada@example.com"
+  },
+  "accountName": "Acme Checkout",
+  "narration": "Order #1042"
+}
+```
+
+```bash cURL (wire format)
+curl -X POST "https://api.cngn.co/v1/api/virtual-account/temporary" \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "content": "<base64 AES-256-CBC ciphertext of the plain body>",
+    "iv": "<base64 16-byte IV>"
+  }'
+```
+
+```typescript TypeScript
+import { createCipheriv, randomBytes } from "crypto";
+
+const key = Buffer.from(process.env.AES_KEY!, "hex"); // 32-byte key
+const iv = randomBytes(16);
+
+const plain = JSON.stringify({
+  amount: 50000,
+  customer: {
+    name: "Ada Obi",
+    email: "ada@example.com",
+  },
+  accountName: "Acme Checkout",
+  narration: "Order #1042",
+});
+
+const cipher = createCipheriv("aes-256-cbc", key, iv);
+const content = Buffer.concat([
+  cipher.update(plain, "utf8"),
+  cipher.final(),
+]).toString("base64");
+
+const response = await fetch(
+  "https://api.cngn.co/v1/api/virtual-account/temporary",
+  {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${process.env.CNGN_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ content, iv: iv.toString("base64") }),
+  }
+);
+
+const { data: encrypted } = await response.json();
+// Decrypt `encrypted` using your Ed25519 private key
+```
+
+</RequestExample>
+
+<ResponseExample>
+
+```json 200 - Success (data shown decrypted)
+{
+  "status": 200,
+  "message": "Temporary virtual account created successfully",
+  "data": {
+    "reference": "DEP-8c1f2a9b",
+    "paymentReference": "PAY-55aa66bb",
+    "amount": 50000,
+    "amountExpected": 50075,
+    "fee": 70,
+    "vat": 5,
+    "currency": "NGN",
+    "status": "pending",
+    "narration": "Order #1042",
+    "accountNumber": "8801234567",
+    "accountName": "Acme Checkout",
+    "bankName": "Wema Bank",
+    "bankCode": "035",
+    "expiresAt": "2026-07-22T18:45:00.000Z"
+  }
+}
+```
+
+```json 400 - Validation error
+{
+  "status": 400,
+  "message": "amount: Minimum amount is 100 NGN"
+}
+```
+
+```json 403 - Permission denied
+{
+  "status": false,
+  "message": "Permission denied"
+}
+```
+
+</ResponseExample>

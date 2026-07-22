@@ -1,0 +1,68 @@
+---
+title: "cNGN: Programmatic Access to Nigeria's Regulated Stablecoin"
+sidebarTitle: "Introduction"
+description: "cNGN is a regulated Naira-backed stablecoin. Use the API to mint, redeem, transfer, and bridge cNGN across multiple blockchain networks."
+icon: "house"
+---
+
+cNGN is Africa's first regulated stablecoin — pegged 1:1 to the Nigerian Naira and issued on multiple blockchain networks. The cNGN API gives your business programmatic control over the full fiat-to-crypto and crypto-to-fiat cycle, from accepting Naira deposits through virtual bank accounts to settling redemptions back to any Nigerian bank.
+
+## What you can build
+
+<CardGroup cols={2}>
+  <Card title="Accept Naira deposits" icon="building-columns" href="/api-reference/get-virtual-account">
+    Collect Naira through dedicated or one-time virtual bank accounts and receive cNGN automatically.
+  </Card>
+  <Card title="Redeem to fiat" icon="money-bill-transfer" href="/api-reference/redeem-asset">
+    Convert cNGN back to Naira, settled directly to any Nigerian bank account.
+  </Card>
+  <Card title="Withdraw on-chain" icon="arrow-up-right-from-square" href="/api-reference/withdraw">
+    Send cNGN to whitelisted external wallet addresses on any supported network.
+  </Card>
+  <Card title="Bridge across chains" icon="bridge" href="/api-reference/bridge">
+    Move cNGN between EVM chains, Solana, Tron, and Bantu in a single API call.
+  </Card>
+  <Card title="Check balances" icon="wallet" href="/api-reference/get-balance">
+    Retrieve your cNGN balance across all supported networks in real time.
+  </Card>
+  <Card title="Track transactions" icon="list-check" href="/api-reference/get-transactions">
+    Query your full transaction history — deposits, withdrawals, redemptions, and bridges.
+  </Card>
+</CardGroup>
+
+## Base URL
+
+Every API request targets:
+
+```text
+https://api.cngn.co/v1/api
+```
+
+The same base URL serves both the sandbox and production environment. The prefix of your API key (`cngn_test` or `cngn_live`) determines which environment a request runs against.
+
+## Security model
+
+cNGN is built for institutional-grade integrations. Every request passes through three independent security layers:
+
+1. **API key authentication** — a Bearer token identifies your business and selects the environment.
+2. **IP whitelisting** — requests are only accepted from server IP addresses you have registered in the dashboard.
+3. **Payload encryption** — request bodies are AES-256-CBC encrypted, and response payloads are encrypted to your Ed25519 public key so only your private key can read them.
+
+See the [Encryption guide](/guides/encryption) for full implementation details, or use an [official SDK](/sdks) that handles both directions automatically.
+
+## Next steps
+
+<Steps>
+  <Step title="Get your API keys">
+    Generate test and live API keys from the cNGN merchant dashboard at [cngn.co](https://cngn.co).
+  </Step>
+  <Step title="Follow the Quickstart">
+    Make your first authenticated request in minutes — [Quickstart](/quickstart).
+  </Step>
+  <Step title="Set up encryption">
+    Configure request encryption and response decryption — [Encryption guide](/guides/encryption).
+  </Step>
+  <Step title="Go live">
+    Run through the [Going Live Checklist](/going-live) before switching to production keys.
+  </Step>
+</Steps>

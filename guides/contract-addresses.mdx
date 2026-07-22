@@ -1,0 +1,55 @@
+---
+title: "Verified cNGN Token Contract Addresses per Network"
+sidebarTitle: "Contract Addresses"
+description: "Official cNGN token contract addresses for every supported mainnet and testnet chain — verified for wallet integration and on-chain indexing."
+---
+
+cNGN is deployed as a token contract on each supported blockchain network. Use the addresses below when adding cNGN to a wallet, indexing token transfers, or interacting with the contract directly on-chain. These are the only addresses you should ever trust.
+
+<Warning>
+  Only trust contract addresses published here or on the official [cNGN website](https://cngn.co). Scammers routinely deploy look-alike tokens with similar names or ticker symbols. Always verify the **full contract address** character by character — never rely on the ticker alone.
+</Warning>
+
+## Token contracts
+
+<Tabs>
+  <Tab title="Mainnet">
+    | Network | Type | Contract address |
+    | --- | --- | --- |
+    | Bantu | Stellar-based | `GD6G2NT7CQHPIYHA52KZHWB6ONNWTSGZOOLTRLRASENM2VWSF6CHYFRX` |
+    | Asset Chain | EVM | `0x7923C0f6FA3d1BA6EAFCAedAaD93e737Fd22FC4F` |
+    | BNB Chain | EVM | `0xa8AEA66B361a8d53e8865c62D142167Af28Af058` |
+    | Ethereum | EVM | `0x17CDB2a01e7a34CbB3DD4b83260B05d0274C8dab` |
+    | Polygon | EVM | `0x52828daa48C1a9A06F37500882b42daf0bE04C3B` |
+    | Base | EVM | `0x46C85152bFe9f96829aA94755D9f915F9B10EF5F` |
+    | Solana | SPL | `3jiqwBQVRC5zRwHyqvnkQurebJ5RNxg3F5fXMwaxgkv8` |
+    | Lisk | EVM | `0xC7aB2C35Ea37236e644C24A4E4a1911c082887c0` |
+    | Monad | EVM | Not yet deployed |
+    | Arc | EVM | Not yet deployed |
+  </Tab>
+  <Tab title="Testnet">
+    | Network | Type | Contract address |
+    | --- | --- | --- |
+    | Bantu | Stellar-based | `GAE7E56N3XIC6JGJI54SD3VN4EDY3OZVFA7CLHXAMMTHLU4LIFYJMFSI` |
+    | Asset Chain | EVM | `0x00F0a33d9AFaC108A4963D4Cb4Ef6A9C6B8D8859` |
+    | BNB Chain | EVM | `0x8a078b182bA9649c03982c2a80CDcc81cdc99dA8` |
+    | Ethereum | EVM | `0xF55E56423e6b50808fD07cB62b6A32B91903f50E` |
+    | Polygon | EVM | `0xf24B1Cee8cA70341FcefBCa10e7e4Db9A4896486` |
+    | Base | EVM | `0xEFdF04BAfE0ebabb5F5cD9e3f36564f51CFe1530` |
+    | Solana | SPL | `HfJWS8vJHvxKn5xW3uLXkTmEy4jny3G45QnS1Eab5sg` |
+    | Lisk | EVM | `0x999E3A32eF3F9EAbF133186512b5F29fADB8a816` |
+    | Monad | EVM | `0x4F90098BA5b08ABAf039b95A851F8e764EB84b49` |
+    | Arc | EVM | `0x1716Df6A18DcFF031BFD209aDB8035174AdC0D31` |
+  </Tab>
+</Tabs>
+
+## Good to know
+
+<AccordionGroup>
+  <Accordion title="Mainnet and testnet addresses are different contracts" icon="code-compare">
+    A testnet contract address holds no real value and will not work on mainnet — and vice versa. Always match the contract address to the environment you are working in. If your API key starts with `cngn_test`, interact only with testnet contracts. If your API key starts with `cngn_live`, use the mainnet addresses above.
+  </Accordion>
+  <Accordion title="Available API networks may differ from contract existence" icon="circle-nodes">
+    A contract existing on a chain does not automatically mean withdrawals and bridging are enabled for it through the API. Networks can be temporarily disabled on the platform side. The authoritative list for API operations is always the response from [Get Networks](/api-reference/get-networks). See the [Networks guide](/guides/networks) for details on how to retrieve and use network IDs.
+  </Accordion>
+</AccordionGroup>

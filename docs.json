@@ -1,0 +1,146 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "luma",
+  "name": "cNGN",
+  "description": "Official API documentation for cNGN — Africa's first regulated stablecoin.",
+  "colors": {
+    "primary": "#5620C8",
+    "light": "#9D74F0",
+    "dark": "#43199C"
+  },
+  "favicon": "/favicon.svg",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label": "Dashboard",
+      "href": "https://cngn.co"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "sdks",
+              "going-live"
+            ]
+          },
+          {
+            "group": "Integration Guides",
+            "pages": [
+              "guides/authentication",
+              "guides/encryption",
+              "guides/response-format",
+              "guides/permissions",
+              "guides/rate-limits",
+              "guides/networks",
+              "guides/contract-addresses",
+              "guides/errors"
+            ]
+          },
+          {
+            "group": "Security",
+            "pages": [
+              "guides/security",
+              "guides/security/generating-api-keys",
+              "guides/security/generating-ssh-keys"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Wallet",
+            "pages": [
+              "api-reference/get-balance",
+              "api-reference/get-transactions",
+              "api-reference/get-networks"
+            ]
+          },
+          {
+            "group": "Deposits",
+            "pages": [
+              "api-reference/get-virtual-account",
+              "api-reference/create-temporary-virtual-account"
+            ]
+          },
+          {
+            "group": "Redemptions",
+            "pages": [
+              "api-reference/redeem-asset",
+              "api-reference/verify-account-details",
+              "api-reference/get-banks",
+              "api-reference/update-bank-account"
+            ]
+          },
+          {
+            "group": "On-Chain Transfers",
+            "pages": [
+              "api-reference/withdraw",
+              "api-reference/verify-withdrawal",
+              "api-reference/bridge-quote",
+              "api-reference/bridge"
+            ]
+          },
+          {
+            "group": "Address Whitelisting",
+            "pages": [
+              "api-reference/whitelist-address",
+              "api-reference/get-whitelisted-addresses"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Website",
+          "href": "https://cngn.co",
+          "icon": "globe",
+          "color": {
+            "light": "#5620C8",
+            "dark": "#9D74F0"
+          }
+        },
+        {
+          "anchor": "GitHub",
+          "href": "https://github.com/wrappedcbdc",
+          "icon": "github",
+          "color": {
+            "light": "#5620C8",
+            "dark": "#9D74F0"
+          }
+        }
+      ]
+    }
+  },
+  "api": {
+    "playground": {
+      "display": "simple"
+    }
+  },
+  "footer": {
+    "socials": {
+      "website": "https://cngn.co",
+      "github": "https://github.com/wrappedcbdc"
+    }
+  }
+}

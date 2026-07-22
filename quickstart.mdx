@@ -1,0 +1,188 @@
+---
+title: "Get Started with cNGN: Make Your First API Request"
+sidebarTitle: "Quickstart"
+description: "Set up your API key, whitelist your IP, configure Ed25519 encryption, and make your first authenticated cNGN API request in minutes."
+icon: "rocket"
+---
+
+The cNGN API uses three security layers working together: a Bearer API key that identifies your business, an IP whitelist that ensures requests come from your servers, and an Ed25519 key pair that encrypts every response payload so only you can read it. This guide walks you through all three, then makes a real API call.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- A verified cNGN merchant account with dashboard access
+- Your server's public IP address (or NAT gateway / egress IP)
+- The ability to generate an Ed25519 SSH key pair on your machine
+
+---
+
+<Steps>
+
+<Step title="Generate your API key">
+
+Log in to the merchant dashboard and generate an API key for the environment you want to use:
+
+| Environment | Key prefix | Purpose |
+|---|---|---|
+| Test (sandbox) | `cngn_test...` | Integration and testing — no real funds move |
+| Live (production) | `cngn_live...` | Real transactions and bank settlement |
+
+Both environments share the same base URL: `https://api.cngn.co/v1/api`. The key prefix is how the API knows which environment you are targeting.
+
+<Warning>
+Treat API keys like passwords. Never commit them to source control, log them, or expose them in client-side or mobile code. Store them in a secrets manager such as AWS Secrets Manager, HashiCorp Vault, or your platform's equivalent.
+</Warning>
+
+</Step>
+
+<Step title="Whitelist your server IP">
+
+The API validates the source IP of every incoming request against your whitelist. Any request from an address that is not listed is rejected immediately — before any business logic runs — with a `403 IP address not whitelisted` error.
+
+Go to **Security Settings** in your merchant dashboard and add every IP address your servers will use to call the API. If your infrastructure routes outbound traffic through a NAT gateway or load balancer, add those egress IPs rather than individual instance IPs.
+
+<Tip>
+If you are testing locally, add your current public IP. You can look it up by running `curl ifconfig.me` in your terminal.
+</Tip>
+
+</Step>
+
+<Step title="Generate and upload your Ed25519 public key" id="ed25519-key-setup">
+
+The cNGN API encrypts every response payload using your Ed25519 public key. Only the matching private key — which stays on your server — can decrypt it. Generate a dedicated key pair for your cNGN integration:
+
+```bash
+ssh-keygen -t ed25519 -C "api@yourcompany.com" -f cngn_api_key
+```
+
+This command creates two files:
+
+- `cngn_api_key` — your **private key**; keep this secret and store it securely
+- `cngn_api_key.pub` — your **public key**; upload this to the dashboard
+
+In your merchant dashboard, navigate to **API Keys** for the environment you are using (test or live) and paste the contents of `cngn_api_key.pub` into the SSH public key field.
+
+<Warning>
+Each environment has its own SSH key slot. A test public key does not carry over to live. If the key for an environment is missing, every request will fail with `No Test SSH Key found` or `No Live SSH Key found`.
+</Warning>
+
+</Step>
+
+<Step title="Make your first request">
+
+`GET /balance` is the ideal first call: it requires no request body, so there is no request encryption to deal with yet. It simply returns the cNGN balance for your account.
+
+<CodeGroup>
+
+```bash cURL
+curl -X GET "https://api.cngn.co/v1/api/balance" \
+  -H "Authorization: Bearer cngn_test_xxxxxxxxxxxxx" \
+  -H "Content-Type: application/json"
+```
+
+```typescript TypeScript
+const response = await fetch("https://api.cngn.co/v1/api/balance", {
+  method: "GET",
+  headers: {
+    Authorization: `Bearer ${process.env.CNGN_API_KEY}`,
+    "Content-Type": "application/json",
+  },
+});
+
+const body = await response.json();
+console.log(body);
+```
+
+```python Python
+import os
+import requests
+
+response = requests.get(
+    "https://api.cngn.co/v1/api/balance",
+    headers={
+        "Authorization": f"Bearer {os.environ['CNGN_API_KEY']}",
+        "Content-Type": "application/json",
+    },
+)
+
+body = response.json()
+print(body)
+```
+
+</CodeGroup>
+
+A successful call returns the standard response envelope. The `data` field is an encrypted base64 string — not a plain JSON object:
+
+```json
+{
+  "status": 200,
+  "message": "Balance fetched successfully",
+  "data": "kJ8vX2mN...base64-encrypted-payload...=="
+}
+```
+
+</Step>
+
+<Step title="Decrypt the response">
+
+Every response payload is AES-encrypted and then wrapped with your Ed25519 public key before it leaves the cNGN servers. Use your private key to decrypt the `data` field. The [Encryption guide](/guides/encryption) provides full implementations in every supported language; the decrypted payload for a balance call looks like this:
+
+```json
+[
+  {
+    "asset_type": "credit_alphanum4",
+    "asset_code": "CNGN",
+    "balance": "150000.00"
+  }
+]
+```
+
+If you are using an [official SDK](/sdks), decryption is handled automatically — you receive the plain object directly from the SDK method without any extra steps.
+
+</Step>
+
+<Step title="Encrypt request bodies">
+
+`GET /balance` required no body, but every `POST` and `PUT` endpoint does. Before sending, you must AES-256-CBC encrypt the JSON body and wrap it in the following envelope:
+
+```json
+{
+  "content": "<base64 ciphertext>",
+  "iv": "<base64 initialization vector>"
+}
+```
+
+The AES encryption key is issued alongside your API key in the merchant dashboard — it is separate from your Ed25519 key pair. Sending a plain JSON body to a write endpoint will fail with:
+
+```json
+{
+  "status": 400,
+  "message": "Missing encryption data, key, or IV"
+}
+```
+
+See the [Encryption guide](/guides/encryption) for step-by-step code examples in TypeScript, Python, PHP, and Java, or use an [official SDK](/sdks) which handles this automatically for every endpoint.
+
+</Step>
+
+</Steps>
+
+---
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/guides/authentication">
+    Deep-dive into API keys, environments, IP whitelisting, and key rotation.
+  </Card>
+  <Card title="Encryption" icon="lock" href="/guides/encryption">
+    Step-by-step code for encrypting requests and decrypting responses.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Explore every endpoint: deposits, withdrawals, redemptions, and bridges.
+  </Card>
+  <Card title="Error Reference" icon="triangle-exclamation" href="/guides/errors">
+    Understand every error code and how to handle it gracefully.
+  </Card>
+</CardGroup>
