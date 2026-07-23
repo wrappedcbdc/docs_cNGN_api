@@ -8,6 +8,14 @@
     "light": "#9D74F0",
     "dark": "#43199C"
   },
+  "fonts": {
+    "heading": {
+      "family": "Space Grotesk"
+    },
+    "body": {
+      "family": "Inter"
+    }
+  },
   "favicon": "/icon.svg",
   "logo": {
     "light": "/logo/light.svg",
