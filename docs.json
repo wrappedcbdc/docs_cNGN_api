@@ -136,29 +136,7 @@
           }
         ]
       }
-    ],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Website",
-          "href": "https://cngn.co",
-          "icon": "globe",
-          "color": {
-            "light": "#5620C8",
-            "dark": "#9D74F0"
-          }
-        },
-        {
-          "anchor": "SDKs",
-          "href": "https://github.com/wrappedcbdc",
-          "icon": "github",
-          "color": {
-            "light": "#5620C8",
-            "dark": "#9D74F0"
-          }
-        }
-      ]
-    }
+    ]
   },
   "api": {
     "playground": {
