@@ -1,23 +1,21 @@
 ---
-title: "Supported Blockchain Networks for cNGN Withdrawals"
-sidebarTitle: "Networks"
-description: "Fetch environment-specific network IDs, explore all supported chains for cNGN, and learn how to reference the correct networkId in API calls."
+title: "Networks"
+description: "Working with supported blockchain networks"
+icon: "circle-nodes"
 ---
 
-cNGN is issued on multiple blockchain networks simultaneously. Whenever you make a request that moves value on-chain — such as [Withdraw](/api-reference/withdraw), [Bridge](/api-reference/bridge), or [Whitelist Address](/api-reference/whitelist-address) — you identify the target chain using a `networkId` field. Understanding how network IDs work, and how to retrieve them correctly for your environment, is essential before you start integrating any on-chain operations.
+cNGN is issued on multiple blockchain networks. Endpoints that move value on-chain ([Withdraw](/api-reference/withdraw), [Bridge](/api-reference/bridge), and [Whitelist Address](/api-reference/whitelist-address)) identify the target chain with a **`networkId`**.
 
 ## Getting network IDs
 
-Network IDs are **environment-specific database identifiers**, not fixed enums or chain IDs. The same blockchain (for example, Polygon) will have a different `id` in your test environment than in your live environment. This means you must never hard-code a network ID.
-
-Always fetch the current list at runtime or during integration setup by calling [Get Networks](/api-reference/get-networks):
+Network IDs are environment-specific database identifiers, not fixed enums. Always fetch the current list at runtime or integration time from [Get Networks](/api-reference/get-networks):
 
 ```bash
 curl -X GET "https://api.cngn.co/v1/api/networks" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-After decrypting the response, the payload looks like this:
+Decrypted response payload:
 
 ```json
 [
@@ -38,25 +36,16 @@ After decrypting the response, the payload looks like this:
 ]
 ```
 
-Use the `id` value as the `networkId` in subsequent requests. If you need additional metadata about the underlying blockchain, pass `?includeBlockchain=true` to include the `blockchain` object in each network entry.
-
-<Warning>
-  Never hard-code network IDs across environments. Your test and live environments have different IDs for the same chain. Always resolve IDs per environment at startup or from a short-lived cache, and never copy a network ID from a test integration into a production deployment.
-</Warning>
+Use the `id` value as `networkId` in subsequent requests. Pass `?includeBlockchain=true` to include underlying blockchain metadata in the response.
 
 ## Supported chains
 
-cNGN is deployed across a broad range of blockchain ecosystems. The table below shows every chain where cNGN is supported or planned:
+cNGN supports EVM chains (Ethereum, BNB Smart Chain, Polygon, Base, Asset Chain), Tron, and Bantu (XBN). The authoritative list for your environment is always the [Get Networks](/api-reference/get-networks) response. Networks with `isDisabled: true` cannot be used for withdrawals or bridging.
 
-| Ecosystem | Networks |
-| --- | --- |
-| **EVM** | Ethereum, BNB Smart Chain, Polygon, Base, Asset Chain, Lisk, Monad, Arc |
-| **Tron** | Tron |
-| **Solana** | Solana (SPL token) |
-| **Bantu** | Bantu (XBN, Stellar-based) |
-
-The authoritative list for your specific environment is always the [Get Networks](/api-reference/get-networks) response — chains may be added or temporarily disabled without notice. Networks with `isDisabled: true` in the response **cannot be used** for withdrawals or bridging until re-enabled.
+<Warning>
+Never hard-code network IDs across environments; test and live environments have different IDs for the same chain. Resolve IDs per environment.
+</Warning>
 
 ## Contract addresses
 
-Verified cNGN token contract addresses for every chain — both mainnet and testnet — are listed on the [Contract Addresses](/guides/contract-addresses) page. Always verify contract addresses from the official source before interacting with the token on-chain.
+Verified cNGN token contract addresses for every chain, mainnet and testnet, are listed on the [Contract Addresses](/guides/contract-addresses) page. Always verify contract addresses from the official source before interacting on-chain.

@@ -1,11 +1,8 @@
 ---
-title: "cNGN API Reference: Endpoint Conventions and Overview"
-sidebarTitle: "Overview"
-description: "REST API reference for cNGN — base URL, Bearer token auth, AES-256-CBC request encryption, Ed25519 response encryption, and all endpoint groups."
+title: "API Reference"
+description: "Conventions used across all cNGN API endpoints"
 icon: "book-open"
 ---
-
-The cNGN REST API lets your business mint, redeem, transfer, and bridge cNGN — Africa's first regulated Naira-backed stablecoin — through a single authenticated HTTP interface. Every request targets the base URL below, carries a Bearer API key, and (for write operations) sends an AES-256-CBC encrypted body. Responses return their `data` payload encrypted to your registered Ed25519 public key; the examples throughout this reference display the **plain, decrypted** values so you can read them easily.
 
 ## Base URL
 
@@ -15,48 +12,42 @@ https://api.cngn.co/v1/api
 
 ## Authentication
 
-Every endpoint requires a Bearer API key in the `Authorization` header. You must also have your server's IP address whitelisted in the dashboard before requests are accepted.
+All endpoints require a Bearer API key and a whitelisted source IP:
 
 ```bash
-Authorization: Bearer YOUR_API_KEY
+Authorization: Bearer cngn_live_xxxxxxxxxxxxx
 ```
 
-See the [Authentication guide](/guides/authentication) for instructions on generating keys, whitelisting IPs, and rotating credentials.
+See [Authentication](/guides/authentication).
 
 ## Encrypted payloads
 
 <Warning>
-  **All `POST` and `PUT` request bodies must be AES-256-CBC encrypted** and
-  sent as a JSON object with two fields:
+**Request bodies** on `POST`/`PUT` endpoints must be AES-256-CBC encrypted and sent as `{ "content": "...", "iv": "..." }`. **Response `data` fields** are encrypted to your Ed25519 public key.
 
-  ```json
-  {
-    "content": "<base64-encoded ciphertext>",
-    "iv": "<base64-encoded initialisation vector>"
-  }
-  ```
-
-  **All response `data` fields are encrypted** to your Ed25519 public key and
-  returned as a base64 string. You must decrypt them before use.
-
-  Every example in this reference shows the **decrypted, human-readable
-  payloads** for clarity. On the wire, both sides are always encrypted. See the
-  [Encryption guide](/guides/encryption) for key setup and cipher details, or
-  use an [official SDK](/sdks) which handles encryption transparently.
+For readability, every example in this reference shows the **plain (decrypted) payloads**. On the wire, both are encrypted. See the [Encryption guide](/guides/encryption), or use an [official SDK](/sdks) which handles it transparently.
 </Warning>
 
-## Endpoint groups
+## Endpoints at a glance
 
-| Group | Endpoints | What it does |
-|---|---|---|
-| **Wallet** | `GET /balance` · `GET /transactions` | Check balances and browse transaction history |
-| **Deposits** | `GET /virtual-account` · `POST /virtual-account/temporary` | Manage dedicated and one-time Naira deposit accounts |
-| **Redemptions** | `POST /redeemAsset` · `POST /account/verify` · `GET /banks` · `PUT /bank-account` | Burn cNGN and settle Naira to a bank account |
-| **On-Chain Transfers** | `POST /withdraw` · `GET /withdraw/verify/{tnxRef}` | Send cNGN to an external wallet address |
-| **Bridging** | `POST /bridge-quote` · `POST /bridge` | Move cNGN across supported blockchain networks |
-| **Address Whitelisting** | `POST /whitelist` · `GET /whitelisted` | Control which external addresses can receive funds |
-| **Networks** | `GET /networks` | List networks available for transfers and bridging |
+| Method | Path | Description | Permission |
+| --- | --- | --- | --- |
+| GET | `/balance` | Get cNGN balances | None |
+| GET | `/transactions` | Paginated transaction history | None |
+| GET | `/networks` | List supported blockchain networks | None |
+| GET | `/virtual-account` | Get your dedicated deposit account(s) | Fiat Deposit |
+| POST | `/virtual-account/temporary` | Create a one-time deposit account | Fiat Deposit |
+| POST | `/redeemAsset` | Redeem cNGN to a bank account | Redeem |
+| POST | `/account/verify` | Resolve a bank account name | None |
+| GET | `/banks` | List supported banks with codes | None |
+| PUT | `/bank-account` | Update your settlement bank account | None |
+| POST | `/withdraw` | Withdraw cNGN to an external wallet | Send Crypto |
+| GET | `/withdraw/verify/{tnxRef}` | Check a withdrawal's status | None |
+| POST | `/bridge-quote` | Get fees and receivable amount for a bridge | Swap |
+| POST | `/bridge` | Bridge cNGN between networks | Swap |
+| POST | `/whitelist` | Whitelist an external wallet address | None |
+| GET | `/whitelisted` | List whitelisted addresses | None |
 
 ## Rate limits
 
-The API allows **20 requests per 60 seconds** per API key. If you exceed this limit your key is blocked for 60 seconds and all requests return `429 Too Many Requests`. See [Rate Limiting](/guides/rate-limits) for retry guidance.
+20 requests per 60 seconds per API key. Exceeding it blocks the key for 60 seconds with a `429`. See [Rate Limiting](/guides/rate-limits).

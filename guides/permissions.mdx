@@ -1,16 +1,12 @@
 ---
-title: "cNGN API Permissions and Role-Based Access Control"
-sidebarTitle: "Permissions"
-description: "Learn which cNGN API endpoints require explicit role permissions, how your organisation admin manages them, and what to do when permission is denied."
+title: "Permissions"
+description: "Role permissions required by certain endpoints"
+icon: "user-shield"
 ---
 
-The cNGN API uses a role-based permission system on top of standard API key authentication. Most endpoints only require a valid API key and a whitelisted IP address. However, endpoints that move funds or sensitive financial data require your merchant account's role to hold a specific permission before the request is processed. This gives your organisation fine-grained control over which operations each integration is authorised to perform.
+Some endpoints require your merchant account's role to hold a specific permission. Permissions are managed by your organisation's administrator in the merchant dashboard.
 
-Permissions are managed by your organisation's administrator in the **merchant dashboard**. If you receive a permission error, ask your admin to review and update your role's permissions.
-
-## Permission denied response
-
-If your role does not hold the permission required by an endpoint, the API responds with HTTP `403`:
+If your role lacks the required permission, the API responds with:
 
 ```json
 {
@@ -19,11 +15,7 @@ If your role does not hold the permission required by an endpoint, the API respo
 }
 ```
 
-Note that `status` is the boolean `false` here rather than a numeric HTTP code — see [Response Format](/guides/response-format) for more on this shape.
-
 ## Permission map
-
-The table below lists each permission and the endpoints it gates. All other endpoints only require a valid API key and a whitelisted IP.
 
 | Permission | Required by |
 | --- | --- |
@@ -32,13 +24,11 @@ The table below lists each permission and the endpoints it gates. All other endp
 | **Send Crypto** | [Withdraw](/api-reference/withdraw) |
 | **Swap** | [Bridge Quote](/api-reference/bridge-quote), [Bridge](/api-reference/bridge) |
 
-<Note>
-  If you are the organisation admin and need to grant a permission, navigate to **Settings → Roles** in the merchant dashboard and update the relevant role. Changes take effect immediately on the next API request.
-</Note>
+All other endpoints only require a valid API key and whitelisted IP.
 
 ## Service availability
 
-Redemption and withdrawal endpoints are additionally subject to platform-level service controls, separate from role permissions. If a service has been temporarily disabled — for example during a maintenance window or incident response — requests to those endpoints fail with:
+Redemption and withdrawal endpoints are additionally subject to platform-level service controls. If a service has been temporarily disabled (for example during an incident), requests fail with:
 
 ```json
 {
@@ -47,4 +37,4 @@ Redemption and withdrawal endpoints are additionally subject to platform-level s
 }
 ```
 
-This condition is transient. You do not need to change your request or credentials — retry after a short delay, or check the cNGN status page for updates on service restoration.
+This is transient; retry later or check the status page.

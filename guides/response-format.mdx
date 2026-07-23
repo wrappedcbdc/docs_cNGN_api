@@ -1,10 +1,8 @@
 ---
-title: "Understanding the cNGN API Response and Pagination"
-sidebarTitle: "Response Format"
-description: "Understand the cNGN standard response envelope, the encrypted data field, error response shapes, and the pagination object returned by list endpoints."
+title: "Response Format"
+description: "The standard response envelope returned by every endpoint"
+icon: "brackets-curly"
 ---
-
-Every response from the cNGN API follows a consistent envelope structure. Learning this structure once means you can handle any endpoint's response predictably, whether it's a successful operation, an error, or a paginated list. The most important thing to understand up front is that the `data` field in a success response is always an encrypted string on the wire — you must decrypt it before you can use it.
 
 ## Success envelope
 
@@ -18,25 +16,19 @@ Every successful call returns HTTP `200` with this structure:
 }
 ```
 
-<ResponseField name="status" type="number">
-  The HTTP status code. Always `200` for successful responses.
-</ResponseField>
-
-<ResponseField name="message" type="string">
-  A human-readable summary of the result, such as `"Balance fetched successfully"` or `"Withdrawal initiated successfully"`.
-</ResponseField>
-
-<ResponseField name="data" type="string">
-  The response payload, encrypted to your Ed25519 public key and base64-encoded. Decrypt this field using your Ed25519 private key before reading the contents. See the [Encryption guide](/guides/encryption) for the full decryption implementation.
-</ResponseField>
+| Field | Type | Description |
+| --- | --- | --- |
+| `status` | number | HTTP status code |
+| `message` | string | Human-readable summary of the result |
+| `data` | string | The response payload, encrypted to your Ed25519 public key; see [Encryption](/guides/encryption) |
 
 <Note>
-  Throughout the API Reference, response examples show the **decrypted** contents of `data` so you can understand the payload shape. On the wire, `data` is always an encrypted base64 string — never plain JSON.
+Throughout the API Reference, response examples show the **decrypted** contents of `data` so you can see the actual payload shape. On the wire, `data` is always an encrypted base64 string.
 </Note>
 
 ## Error envelope
 
-Errors return the HTTP status code and a message. There is no `data` field on error responses:
+Errors return the status and message with no `data` field:
 
 ```json
 {
@@ -45,7 +37,7 @@ Errors return the HTTP status code and a message. There is no `data` field on er
 }
 ```
 
-Permission failures use a slightly different shape where `status` is a boolean rather than a number:
+Permission failures use a slightly different shape:
 
 ```json
 {
@@ -54,11 +46,11 @@ Permission failures use a slightly different shape where `status` is a boolean r
 }
 ```
 
-See the [Error Reference](/guides/errors) for a complete listing of every error message, its cause, and how to resolve it.
+See the [Error Reference](/guides/errors) for the full list.
 
 ## Pagination
 
-List endpoints such as [Get Transactions](/api-reference/get-transactions) return paginated results. After you decrypt the `data` field, the payload contains both the records array and a `pagination` object:
+List endpoints such as [Get Transactions](/api-reference/get-transactions) return paginated data:
 
 ```json
 {
@@ -73,22 +65,10 @@ List endpoints such as [Get Transactions](/api-reference/get-transactions) retur
 }
 ```
 
-<ResponseField name="count" type="number">
-  The total number of records across all pages.
-</ResponseField>
-
-<ResponseField name="pages" type="number">
-  The total number of pages available given the requested page size.
-</ResponseField>
-
-<ResponseField name="isLastPage" type="boolean">
-  `true` when the current page is the final page of results; `false` otherwise.
-</ResponseField>
-
-<ResponseField name="nextPage" type="number | null">
-  The page number to request for the next page of results, or `null` when you are already on the last page.
-</ResponseField>
-
-<ResponseField name="previousPage" type="number | null">
-  The page number to request for the previous page of results, or `null` when you are on the first page.
-</ResponseField>
+| Field | Type | Description |
+| --- | --- | --- |
+| `count` | number | Total number of records |
+| `pages` | number | Total number of pages |
+| `isLastPage` | boolean | Whether the current page is the last |
+| `nextPage` | number \| null | Next page number, or `null` on the last page |
+| `previousPage` | number \| null | Previous page number, or `null` on the first page |

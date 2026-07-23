@@ -1,89 +1,20 @@
 ---
-title: "GET /withdraw/verify/{tnxRef} — Check Withdrawal Status"
-sidebarTitle: "Verify Withdrawal"
+title: "Verify Withdrawal"
 api: "GET https://api.cngn.co/v1/api/withdraw/verify/{tnxRef}"
-description: "Fetch the full transaction record for a withdrawal, including its on-chain hash and current status, using the trxRef returned by Withdraw."
+description: "Check the status of a withdrawal by its transaction reference"
 ---
 
-After initiating a withdrawal with [POST /withdraw](/api-reference/withdraw), use this endpoint to confirm that it has settled on-chain. Pass the `trxRef` value from the Withdraw response as the `tnxRef` path parameter. The response returns a complete transaction object — the same shape as items returned by [Get Transactions](/api-reference/get-transactions) — including the on-chain hash, explorer link, and a `status` field that reflects real-time settlement state. Poll this endpoint until `status` is `"success"` before treating a withdrawal as final.
+Fetches the full transaction record for a withdrawal, including its on-chain hash and current status. Use this to confirm settlement after calling [Withdraw](/api-reference/withdraw).
 
-<Note>
-  The `data` field in every response is Ed25519-encrypted. The examples on this page show the **decrypted** payload for readability.
-</Note>
-
-## Path parameters
+### Path parameters
 
 <ParamField path="tnxRef" type="string" required>
-  The `trxRef` string returned by [Withdraw](/api-reference/withdraw) when the withdrawal was created. Example: `WD-7f3a2b1c`.
+  The `trxRef` returned by [Withdraw](/api-reference/withdraw).
 </ParamField>
 
-## Response
+### Response (decrypted `data`)
 
-The decrypted `data` object contains the full transaction record for the withdrawal.
-
-<ResponseField name="id" type="string">
-  Internal transaction UUID.
-</ResponseField>
-
-<ResponseField name="trx_ref" type="string">
-  The withdrawal reference, matching the `tnxRef` you queried.
-</ResponseField>
-
-<ResponseField name="from" type="string">
-  Display name of the sending account.
-</ResponseField>
-
-<ResponseField name="receiver" type="object">
-  <Expandable title="receiver">
-    <ResponseField name="address" type="string">
-      The destination wallet address the withdrawal was sent to.
-    </ResponseField>
-  </Expandable>
-</ResponseField>
-
-<ResponseField name="amount" type="string">
-  Withdrawal amount as a decimal string.
-</ResponseField>
-
-<ResponseField name="status" type="string">
-  Current settlement status. Common values: `pending`, `processing`, `success`, `failed`.
-</ResponseField>
-
-<ResponseField name="base_trx_hash" type="string">
-  On-chain transaction hash on the origin network, if available.
-</ResponseField>
-
-<ResponseField name="extl_trx_hash" type="string">
-  External chain transaction hash, if the network uses a relay.
-</ResponseField>
-
-<ResponseField name="explorer_link" type="string">
-  Direct URL to the transaction on the relevant block explorer.
-</ResponseField>
-
-<ResponseField name="network" type="string">
-  Human-readable network name (e.g. `"Base"`).
-</ResponseField>
-
-<ResponseField name="asset_symbol" type="string">
-  Token symbol, typically `"CNGN"`.
-</ResponseField>
-
-<ResponseField name="asset_type" type="string">
-  Asset type identifier for the token.
-</ResponseField>
-
-<ResponseField name="trx_type" type="string">
-  Transaction type, e.g. `"withdrawal"`.
-</ResponseField>
-
-<ResponseField name="description" type="string">
-  Human-readable description of the transaction.
-</ResponseField>
-
-<ResponseField name="createdAt" type="string">
-  ISO 8601 timestamp when the withdrawal was created.
-</ResponseField>
+Returns a full transaction object, the same shape as items in [Get Transactions](/api-reference/get-transactions).
 
 <RequestExample>
 
@@ -93,17 +24,17 @@ curl -X GET "https://api.cngn.co/v1/api/withdraw/verify/WD-7f3a2b1c" \
 ```
 
 ```typescript TypeScript
-const trxRef = "WD-7f3a2b1c";
-
 const res = await fetch(
   `https://api.cngn.co/v1/api/withdraw/verify/${trxRef}`,
-  {
-    headers: { Authorization: `Bearer ${API_KEY}` },
-  }
+  { headers: { Authorization: `Bearer ${API_KEY}` } }
 );
+```
 
-const { data } = await res.json();
-// Decrypt `data` with your Ed25519 private key to read status & hash
+```python Python
+res = requests.get(
+    f"https://api.cngn.co/v1/api/withdraw/verify/{trx_ref}",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+)
 ```
 
 </RequestExample>
@@ -134,7 +65,7 @@ const { data } = await res.json();
 }
 ```
 
-```json 400 - Transaction not found
+```json 400 - Not found
 {
   "status": 400,
   "message": "Transaction not found"

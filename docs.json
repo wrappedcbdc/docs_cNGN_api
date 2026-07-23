@@ -1,24 +1,25 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "luma",
-  "name": "cNGN",
-  "description": "Official API documentation for cNGN — Africa's first regulated stablecoin.",
+  "theme": "mint",
+  "name": "cNGN API Documentation",
+  "description": "Official API documentation for cNGN, Africa's first regulated stablecoin.",
   "colors": {
     "primary": "#5620C8",
     "light": "#9D74F0",
     "dark": "#43199C"
   },
-  "favicon": "/favicon.svg",
+  "fonts": {
+    "heading": {
+      "family": "Space Grotesk"
+    },
+    "body": {
+      "family": "Inter"
+    }
+  },
+  "favicon": "/icon.svg",
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
-  },
-  "navbar": {
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://cngn.co"
-    }
   },
   "navigation": {
     "tabs": [
@@ -28,7 +29,7 @@
           {
             "group": "Get Started",
             "pages": [
-              "introduction",
+              "index",
               "quickstart",
               "sdks",
               "going-live"
@@ -38,7 +39,7 @@
             "group": "Integration Guides",
             "pages": [
               "guides/authentication",
-              "guides/encryption",
+              "guides/webhooks",
               "guides/response-format",
               "guides/permissions",
               "guides/rate-limits",
@@ -46,13 +47,29 @@
               "guides/contract-addresses",
               "guides/errors"
             ]
+          }
+        ]
+      },
+      {
+        "tab": "Security",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "guides/security"
+            ]
           },
           {
-            "group": "Security",
+            "group": "Key Setup",
             "pages": [
-              "guides/security",
               "guides/security/generating-api-keys",
               "guides/security/generating-ssh-keys"
+            ]
+          },
+          {
+            "group": "Payload Encryption",
+            "pages": [
+              "guides/encryption"
             ]
           }
         ]
@@ -107,6 +124,17 @@
             ]
           }
         ]
+      },
+      {
+        "tab": "Changelog",
+        "groups": [
+          {
+            "group": "Changelog",
+            "pages": [
+              "changelog"
+            ]
+          }
+        ]
       }
     ],
     "global": {
@@ -121,7 +149,7 @@
           }
         },
         {
-          "anchor": "GitHub",
+          "anchor": "SDKs",
           "href": "https://github.com/wrappedcbdc",
           "icon": "github",
           "color": {

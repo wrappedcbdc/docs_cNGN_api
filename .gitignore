@@ -1,0 +1,12 @@
+# IDE
+.idea/
+.vscode/
+
+# Windows metadata
+*Zone.Identifier
+
+# Mintlify
+.mintlify/
+
+# OS
+.DS_Store

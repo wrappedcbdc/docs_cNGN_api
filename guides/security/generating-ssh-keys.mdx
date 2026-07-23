@@ -1,148 +1,79 @@
 ---
-title: "Generate an Ed25519 SSH Key Pair for cNGN Responses"
-sidebarTitle: "SSH Keys"
-description: "Generate an Ed25519 SSH key pair for cNGN response decryption on macOS, Linux, or Windows, then upload your public key to the merchant dashboard."
+title: "Generating SSH Keys"
+description: "Create the Ed25519 key pair used to encrypt API responses to you"
 icon: "terminal"
 ---
 
-cNGN encrypts every API response payload to your Ed25519 public key, which means only your server — the one holding the matching private key — can decrypt and read the response data. Before your first API call in any environment, you must generate a key pair and upload the public half to the merchant dashboard. The private key never leaves your server.
-
-<Warning>
-  Never share your private key file, never commit it to a git repository, and never include it in a Docker image or deployment artifact. Anyone who obtains the private key can decrypt your API responses.
-</Warning>
-
-## Generating the key pair
-
-Run the command below on the server that will make API calls. The command is the same on macOS and Linux; Windows users running PowerShell can use either the built-in OpenSSH client (available on Windows 10 and later) or WSL.
-
-<Tabs>
-  <Tab title="macOS / Linux">
-    Open a terminal and run:
-
-    ```bash
-    ssh-keygen -t ed25519 -C "api@yourcompany.com" -f cngn_api_key
-    ```
-
-    <Tip>
-      When prompted for a passphrase, enter one. A passphrase encrypts the private key file on disk, adding a second layer of protection if the file is ever copied off your server.
-    </Tip>
-
-    The command creates two files in your current directory:
-
-    | File | Description | Handling |
-    |---|---|---|
-    | `cngn_api_key` | Private key — decrypts API responses | Keep on your server; never share |
-    | `cngn_api_key.pub` | Public key — encrypts responses to you | Upload to the cNGN dashboard |
-
-    To view the public key so you can copy it:
-
-    ```bash
-    cat cngn_api_key.pub
-    ```
-
-    The output will look similar to:
-
-    ```
-    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... api@yourcompany.com
-    ```
-
-    Copy the entire line — including the `ssh-ed25519` prefix and the comment at the end.
-
-    On macOS you can copy it directly to the clipboard:
-
-    ```bash
-    cat cngn_api_key.pub | pbcopy
-    ```
-
-    On Linux with `xclip` installed:
-
-    ```bash
-    cat cngn_api_key.pub | xclip -selection clipboard
-    ```
-  </Tab>
-
-  <Tab title="Windows (PowerShell)">
-    Open PowerShell (Windows 10 build 1809 or later includes the OpenSSH client) and run:
-
-    ```powershell
-    ssh-keygen -t ed25519 -C "api@yourcompany.com" -f cngn_api_key
-    ```
-
-    <Tip>
-      When prompted for a passphrase, enter one. A passphrase encrypts the private key file on disk, adding a second layer of protection if the file is ever copied off your server.
-    </Tip>
-
-    The command creates two files in your current directory:
-
-    | File | Description | Handling |
-    |---|---|---|
-    | `cngn_api_key` | Private key — decrypts API responses | Keep on your server; never share |
-    | `cngn_api_key.pub` | Public key — encrypts responses to you | Upload to the cNGN dashboard |
-
-    To view the public key so you can copy it:
-
-    ```powershell
-    Get-Content cngn_api_key.pub
-    ```
-
-    The output will look similar to:
-
-    ```
-    ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... api@yourcompany.com
-    ```
-
-    Copy the entire line — including the `ssh-ed25519` prefix and the comment at the end. You can also copy it directly to the clipboard:
-
-    ```powershell
-    Get-Content cngn_api_key.pub | Set-Clipboard
-    ```
-  </Tab>
-</Tabs>
-
-## Uploading the public key to the dashboard
+The cNGN API encrypts every response payload to an **Ed25519 public key** you upload to your dashboard. This guide creates the key pair and copies the public key, on any operating system.
 
 <Steps>
-  <Step title="Log in to the merchant dashboard">
-    Go to [cngn.co](https://cngn.co) and sign in with your merchant account credentials.
-  </Step>
 
-  <Step title="Go to Settings → API Key tab">
-    Click **Settings** in the sidebar navigation, then select the **API Key** tab at the top of the settings page.
-  </Step>
+<Step title="Generate the key pair">
 
-  <Step title="Select the environment">
-    Make sure you are viewing the environment you are configuring — test or live. Each environment has its own SSH key slot, so you need to upload a key for every environment you intend to use.
-  </Step>
+```bash
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
 
-  <Step title="Paste the public key">
-    Paste the full contents of `cngn_api_key.pub` into the SSH public key field. The value must start with `ssh-ed25519` and include the trailing comment.
-  </Step>
+The command prompts you for:
 
-  <Step title="Save">
-    Click **Save**. The cNGN API will now encrypt all responses for that environment to this public key. Only the corresponding private key on your server can decrypt them.
-  </Step>
-</Steps>
+- **Save location**: press Enter to accept the default (`~/.ssh/id_ed25519`), or provide a dedicated path such as `~/.ssh/cngn_api_key`
+- **Passphrase**: optional; press Enter to skip
+
+This produces two files: the private key (`id_ed25519`) and the public key (`id_ed25519.pub`).
 
 <Note>
-  If you forget to upload a public key before making requests, the API returns one of the following errors depending on the environment:
-
-  - `No Test SSH Key found`
-  - `No Live SSH Key found`
-
-  Return to the dashboard, upload the correct public key, and retry your request.
+If you set a passphrase, your integration needs it to load the private key when decrypting responses. For server-side automation, most teams skip the passphrase and rely on filesystem permissions and secret management instead.
 </Note>
+
+</Step>
+
+<Step title="Copy the public key">
+
+<Tabs>
+
+<Tab title="macOS">
+```bash
+cat ~/.ssh/id_ed25519.pub | pbcopy
+```
+</Tab>
+
+<Tab title="Linux">
+```bash
+cat ~/.ssh/id_ed25519.pub | xclip -selection clipboard
+```
+Or simply print it and copy manually:
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+</Tab>
+
+<Tab title="Windows (PowerShell)">
+```powershell
+Get-Content ~\.ssh\id_ed25519.pub | Set-Clipboard
+```
+</Tab>
+
+</Tabs>
+
+</Step>
+
+<Step title="Upload it to your dashboard">
+
+Paste the copied public key into the SSH public key field on the API Key tab of your dashboard settings. Full walkthrough: [Generating API Keys](/guides/security/generating-api-keys).
+
+</Step>
+
+</Steps>
 
 ## Public vs. private key
 
 | File | Can be shared? | Role |
-|---|---|---|
-| `cngn_api_key.pub` (public) | Yes — upload to the dashboard | The platform encrypts responses with it |
-| `cngn_api_key` (private) | Never — keep on your server only | Your integration decrypts responses with it |
+| --- | --- | --- |
+| `id_ed25519.pub` (public) | Yes, upload to the dashboard | The platform encrypts responses with it |
+| `id_ed25519` (private) | Never, keep on your server only | Your integration decrypts responses with it |
 
-## Next steps
+<Warning>
+Your private key must remain protected at all times and never be disclosed to anyone. If it's ever exposed, generate a new pair and update the dashboard immediately.
+</Warning>
 
-With your SSH key pair generated and the public key uploaded, you are ready to wire up request encryption and response decryption in your application.
-
-<Card title="Encryption Guide" icon="lock" href="/guides/encryption" horizontal>
-  Implement AES-256-CBC request encryption and Ed25519 response decryption with full code examples.
-</Card>
+Next: use the private key to decrypt responses in [Encrypting & Decrypting Requests](/guides/encryption).

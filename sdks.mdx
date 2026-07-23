@@ -1,56 +1,49 @@
 ---
-title: "cNGN SDKs: Official Client Libraries for Your Stack"
-sidebarTitle: "SDKs"
-description: "Official SDKs for TypeScript, Python, PHP, and Java that automate Bearer auth, AES-256-CBC request encryption, and Ed25519 response decryption."
+title: "Libraries & SDKs"
+description: "Official cNGN libraries for TypeScript, Python, PHP, and Java"
 icon: "cubes"
 ---
 
-Integrating with the cNGN API requires three things on every request: a Bearer token for authentication, AES-256-CBC encryption of request bodies, and Ed25519 decryption of response payloads. The official SDKs handle all of that for you, so you can call a typed method and work directly with the decrypted result — no cryptography boilerplate required.
-
-## Official libraries
+Official server-side libraries wrap the cNGN API and handle authentication, request encryption (AES-256-CBC), and response decryption (Ed25519) for you. Four languages are currently supported:
 
 <CardGroup cols={2}>
   <Card title="TypeScript / Node.js" icon="js" href="https://github.com/wrappedcbdc/cngn-typescript-library">
-    **cngn-typescript-library** — for Node.js and TypeScript backends. Install via npm or yarn and import typed methods for every endpoint.
+    `cngn-typescript-library`: for Node.js and TypeScript backends.
   </Card>
   <Card title="Python" icon="python" href="https://github.com/wrappedcbdc/cngn-python-library">
-    **cngn-python-library** — for Python backends. Install via pip and use a straightforward client class to call any endpoint.
+    `cngn-python-library`: for Python backends.
   </Card>
   <Card title="PHP" icon="php" href="https://github.com/wrappedcbdc/cngn-php-library">
-    **cngn-php-library** — for PHP backends. Install via Composer and use the fluent client interface in any PHP framework.
+    `cngn-php-library`: for PHP backends (Composer).
   </Card>
-  <Card title="Java / JVM" icon="java" href="https://github.com/wrappedcbdc/cngn-java-library">
-    **cngn-java-library** — for Java and JVM-based backends. Install via Maven or Gradle and call strongly typed methods on the client.
+  <Card title="Java" icon="java" href="https://github.com/wrappedcbdc/cngn-java-library">
+    `cngn-java-library`: for Java and JVM backends.
   </Card>
 </CardGroup>
 
-## What the SDKs handle for you
-
-Every official SDK abstracts the following so you never have to implement them manually:
-
-- **Bearer authentication** — attaches your `cngn_test_...` or `cngn_live_...` API key to every request header automatically
-- **AES-256-CBC request encryption** — serializes your request body to JSON, encrypts it with your AES key, and sends the `{content, iv}` wire format the API expects
-- **Ed25519 / Curve25519 response decryption** — decrypts the encrypted `data` field in every response using your private key and returns a plain object
-- **Typed endpoint methods** — one method per API endpoint, with typed parameters and return values matching the [API Reference](/api-reference/introduction)
-
 <Note>
-SDKs are **server-side only**. Your API key, AES encryption key, and Ed25519 private key must never appear in client-side JavaScript, mobile app bundles, or any code that ships to end users. Use environment variables or a secrets manager on your backend, and call the cNGN API from there.
+SDKs are server-side only. Never embed your API key, encryption key, or Ed25519 private key in client-side or mobile code.
 </Note>
 
-## Using a language not listed?
+## What the SDKs handle for you
 
-If your stack is not covered by one of the four official libraries, you can integrate directly over HTTP. All cNGN endpoints are plain REST — see the [Encryption guide](/guides/encryption) for step-by-step instructions on encrypting request bodies and decrypting responses in any language, and the [API Reference](/api-reference/introduction) for the full endpoint catalogue.
+- Bearer authentication with your `cngn_test` / `cngn_live` API key
+- AES-256-CBC encryption of request bodies into the `{content, iv}` wire format
+- Ed25519/Curve25519 decryption of response payloads
+- Typed methods for every endpoint in the [API Reference](/api-reference/introduction)
+
+If your language isn't listed, integrate directly over HTTP using the [Encryption guide](/guides/encryption); all endpoints are plain REST.
 
 ## Related tools
 
 <Card title="cNGN Price Oracle" icon="chart-line" href="https://github.com/wrappedcbdc/cngn-price-oracle">
-  On-chain price oracle for cNGN. Use this to fetch real-time cNGN pricing data for your application.
+  On-chain price oracle for cNGN.
 </Card>
 
 ## Brand assets
 
-Building a cNGN integration into your product? Use the official logos and brand marks rather than recreating them from screenshots or third-party sources.
+Building a cNGN integration into your product? Use the official logos and brand marks rather than recreating them.
 
 <Card title="cNGN Brand Assets" icon="palette" href="https://drive.google.com/drive/folders/1wIlRBbfztDD8VD89FdQAZt_EdothEXlG">
-  Download official cNGN logos, icons, and brand guidelines from the shared Google Drive folder.
+  Download official cNGN logos and brand assets from the shared drive.
 </Card>

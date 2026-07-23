@@ -1,14 +1,10 @@
 ---
-title: "Error Reference: All cNGN API Error Codes Explained"
-sidebarTitle: "Errors"
-description: "Complete reference of every cNGN API error message, its HTTP status code, root cause, recommended fix, and guidance on safe retry behaviour."
+title: "Error Reference"
+description: "Every error the API returns and how to resolve it"
+icon: "triangle-exclamation"
 ---
 
-When a request cannot be completed, the cNGN API returns an appropriate HTTP status code alongside a JSON body containing a `status` field and a human-readable `message`. Understanding the error structure and knowing what each message means will help you build integrations that handle failures gracefully and recover quickly.
-
-## Error envelope
-
-All errors follow this structure:
+Errors are returned with an HTTP status code and a message:
 
 ```json
 {
@@ -17,42 +13,29 @@ All errors follow this structure:
 }
 ```
 
-There is no `data` field on error responses. The one exception is permission errors, where `status` is the boolean `false` rather than a number:
-
-```json
-{
-  "status": false,
-  "message": "Permission denied"
-}
-```
-
-## Authentication and access errors
-
-These errors are returned before any business logic runs. Fix them by correcting your credentials, key setup, or network configuration.
+## Authentication & access errors
 
 | HTTP | Message | Cause | Fix |
 | --- | --- | --- | --- |
-| `400` | `No token provided` | The `Authorization` header is missing from the request | Add `Authorization: Bearer <your API key>` to every request |
-| `400` | `Invalid token prefix` | The key does not begin with `cngn_test` or `cngn_live` | Check that you copied the full key from the dashboard without truncation |
-| `400` | `Merchant not found` | The API key is not recognised — it may have been revoked or mistyped | Regenerate the key in the dashboard and update your deployment |
-| `400` | `No Test SSH Key found` / `No Live SSH Key found` | No Ed25519 public key has been uploaded for this environment | Upload your public key in the dashboard's security settings for the affected environment |
-| `403` | `IP address not whitelisted` | The request arrived from an IP address not on your whitelist | Add your server's egress IP in the dashboard; include NAT gateways and load balancers |
-| `403` | `Could not determine client IP address` | The source IP could not be resolved — usually a proxy misconfiguration | Verify that your proxy or load balancer is forwarding `X-Forwarded-For` correctly |
-| `403` | `Permission denied` | Your merchant role does not hold the permission required by this endpoint | See [Permissions](/guides/permissions) for the permission map and how to request access |
-| `404` | `Merchant not found` | The business role could not be resolved for this account | Contact cNGN support |
+| 400 | `No token provided` | Missing `Authorization` header | Send `Authorization: Bearer <api key>` |
+| 400 | `Invalid token prefix` | Key doesn't start with `cngn_test`/`cngn_live` | Check you copied the full key |
+| 400 | `Merchant not found` | API key not recognised | Regenerate the key in the dashboard |
+| 400 | `No Test SSH Key found` / `No Live SSH Key found` | No Ed25519 public key uploaded for this environment | Upload your public key in the dashboard |
+| 403 | `IP address not whitelisted` | Request came from a non-whitelisted IP | Add your server IP in dashboard security settings |
+| 403 | `Could not determine client IP address` | Source IP could not be resolved | Check proxy configuration (`X-Forwarded-For`) |
+| 403 | `Permission denied` | Your role lacks the required permission | See [Permissions](/guides/permissions) |
+| 404 | `Merchant not found` | Business role could not be resolved | Contact support |
 
 ## Encryption errors
 
-These errors occur when the API cannot decrypt your request body. They indicate a problem with how you are encrypting the payload.
-
 | HTTP | Message | Cause | Fix |
 | --- | --- | --- | --- |
-| `400` | `Missing encryption data, key, or IV` | The request body was sent as plain JSON instead of the `{ content, iv }` encrypted format | Encrypt the body before sending; see the [Encryption guide](/guides/encryption) |
-| `400` | `Decryption failed` | The body is encrypted but could not be decrypted — wrong AES key, malformed base64, or a corrupted IV | Verify you are using the correct encryption key for the environment and that your IV is freshly generated per request |
+| 400 | `Missing encryption data, key, or IV` | Body sent as plain JSON instead of `{content, iv}` | Encrypt the body; see [Encryption](/guides/encryption) |
+| 400 | `Decryption failed` | Wrong AES key, malformed base64, or corrupted IV | Verify the encryption key and IV generation |
 
 ## Validation errors
 
-Request fields are validated after the body has been decrypted. Validation failures return HTTP `400` with a `field: message` string that identifies exactly which field failed and why:
+Request bodies are validated after decryption. Validation failures return `400` with a `field: message` string, for example:
 
 ```json
 {
@@ -61,26 +44,22 @@ Request fields are validated after the body has been decrypted. Validation failu
 }
 ```
 
-Parse the `message` string to surface the validation detail to your users or logs.
-
 ## Rate limiting
 
 | HTTP | Message | Fix |
 | --- | --- | --- |
-| `429` | `Too many requests. Please try again later.` | Wait 60 seconds before retrying; see [Rate Limits](/guides/rate-limits) for the full quota and best practices |
+| 429 | `Too many requests. Please try again later.` | Wait 60 seconds; see [Rate Limiting](/guides/rate-limits) |
 
 ## Service availability
 
 | HTTP | Message | Cause |
 | --- | --- | --- |
-| `400` | `Service is currently unavailable. Please try again later.` | The redeem or withdrawal service has been temporarily disabled at the platform level |
-
-This is a transient condition — your credentials and request are correct. Retry after a delay or check the cNGN status page for restoration updates.
+| 400 | `Service is currently unavailable. Please try again later.` | Redeem or withdrawal service temporarily disabled platform-wide |
 
 ## Business-logic errors
 
-Endpoint-specific failures — such as insufficient balance, an invalid bank account number, an unsupported network, or a duplicate transaction reference — also return HTTP `400` with a descriptive message. Treat any unrecognised `400` message as **non-retryable without changing the request**. Sending the same request again will produce the same error.
+Endpoint-specific failures (insufficient balance, invalid bank account, unsupported network, etc.) also return `400` with a descriptive message. Treat any unrecognised `400` message as non-retryable without changing the request.
 
 <Tip>
-  **Retry guidance:** safely retry `429` responses after the 60-second block window and `5xx` server errors with exponential backoff. However, do **not** blindly retry `400` responses on money-moving endpoints (withdrawals, redemptions, bridges). A `400` on those endpoints does not guarantee the operation did not reach a partial state. Before retrying, verify the current state of the operation using [Verify Withdrawal](/api-reference/verify-withdrawal) or [Get Transactions](/api-reference/get-transactions) to avoid accidental duplicate transfers.
+**Retry guidance:** retry `429` (after the block window) and `5xx` with exponential backoff. Do not blindly retry `400` responses on money-moving endpoints. Verify state first with [Verify Withdrawal](/api-reference/verify-withdrawal) or [Get Transactions](/api-reference/get-transactions) to avoid duplicate transfers.
 </Tip>

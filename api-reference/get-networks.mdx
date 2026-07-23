@@ -1,66 +1,32 @@
 ---
-title: "GET /networks — List Supported Blockchain Networks"
-sidebarTitle: "Get Networks"
-description: "Retrieve all blockchain networks available for cNGN withdrawals, bridging, and address whitelisting. Use the returned id as networkId in other endpoints."
+title: "Get Networks"
 api: "GET https://api.cngn.co/v1/api/networks"
+description: "List the blockchain networks cNGN currently supports"
 ---
 
-This endpoint returns every blockchain network that cNGN currently supports for on-chain withdrawals, cross-chain bridging, and address whitelisting. The `id` field of each network object is what you pass as `networkId` in those other endpoints — always resolve it dynamically rather than hard-coding it, because IDs differ between the test and live environments. The `data` field in the raw response is Ed25519-encrypted; the example below shows the **decrypted** payload.
+Returns the networks available for withdrawals, bridging, and address whitelisting. Use the returned `id` as `networkId` in other endpoints.
 
 <Note>
-  Network `id` values are environment-specific. An ID that works in the test
-  environment will not match the same network in production. Always call this
-  endpoint at runtime to look up the correct `networkId` for the environment
-  your request is targeting — never hard-code network IDs.
+Network IDs differ between test and live environments. Resolve them per environment; never hard-code them.
 </Note>
 
-## Query parameters
+### Query parameters
 
 <ParamField query="includeBlockchain" type="boolean" default="false">
-  Set to `true` to include underlying blockchain metadata (chain ID, RPC
-  details, etc.) nested inside each network object. Omit or set to `false` when
-  you only need the network `id` and display name.
+  When `true`, includes underlying blockchain metadata for each network.
 </ParamField>
 
-## Response fields
+### Response (decrypted `data`)
 
 <ResponseField name="data" type="object[]">
-  Array of supported network objects.
-
   <Expandable title="Network object">
-    <ResponseField name="id" type="string" required>
-      Unique network identifier. Pass this value as `networkId` in withdrawal,
-      bridge, and whitelist requests.
-    </ResponseField>
-
-    <ResponseField name="name" type="string" required>
-      Full, human-readable network name (e.g. `"Base"`, `"Polygon"`).
-    </ResponseField>
-
-    <ResponseField name="short_name" type="string" required>
-      Abbreviated network code (e.g. `"BASE"`, `"POLYGON"`). Useful for
-      display in your UI.
-    </ResponseField>
-
-    <ResponseField name="isDisabled" type="boolean" required>
-      When `true`, this network is temporarily unavailable. Transfers submitted
-      against a disabled network will be rejected. Filter these out before
-      presenting network options to users.
-    </ResponseField>
-
-    <ResponseField name="blockchain" type="object | null">
-      Additional blockchain metadata. Populated only when
-      `includeBlockchain=true` is passed; otherwise `null`.
-    </ResponseField>
+    <ResponseField name="id" type="string">Network ID. Pass this as `networkId` elsewhere.</ResponseField>
+    <ResponseField name="name" type="string">Full network name.</ResponseField>
+    <ResponseField name="short_name" type="string">Short code (e.g. `BASE`, `BSC`).</ResponseField>
+    <ResponseField name="isDisabled" type="boolean">Disabled networks cannot be used for transfers.</ResponseField>
+    <ResponseField name="blockchain" type="object | null">Blockchain metadata when `includeBlockchain=true`.</ResponseField>
   </Expandable>
 </ResponseField>
-
-<Warning>
-  Networks where `isDisabled` is `true` cannot be used for withdrawals,
-  bridges, or address whitelisting. Always check this flag before submitting a
-  transfer request and surface a clear message to your users when their
-  preferred network is temporarily unavailable.
-</Warning>
 
 <RequestExample>
 
@@ -69,69 +35,44 @@ curl -X GET "https://api.cngn.co/v1/api/networks" \
   -H "Authorization: Bearer YOUR_API_KEY"
 ```
 
-```bash cURL (with blockchain metadata)
-curl -X GET "https://api.cngn.co/v1/api/networks?includeBlockchain=true" \
-  -H "Authorization: Bearer YOUR_API_KEY"
-```
-
 ```typescript TypeScript
-const response = await fetch("https://api.cngn.co/v1/api/networks", {
-  method: "GET",
-  headers: {
-    Authorization: `Bearer ${process.env.CNGN_API_KEY}`,
-  },
+const res = await fetch("https://api.cngn.co/v1/api/networks", {
+  headers: { Authorization: `Bearer ${API_KEY}` },
 });
-
-const { data } = await response.json();
-// data is a base64 Ed25519-encrypted string — decrypt before use
-// After decryption, filter out disabled networks:
-// const active = decrypted.filter((n) => !n.isDisabled);
 ```
 
 ```python Python
-import requests
-import os
-
-response = requests.get(
+res = requests.get(
     "https://api.cngn.co/v1/api/networks",
-    headers={"Authorization": f"Bearer {os.environ['CNGN_API_KEY']}"},
+    headers={"Authorization": f"Bearer {API_KEY}"},
 )
-
-payload = response.json()
-# payload["data"] is a base64 Ed25519-encrypted string — decrypt before use
-# After decryption, filter out disabled networks:
-# active = [n for n in decrypted if not n["isDisabled"]]
 ```
 
 </RequestExample>
 
 <ResponseExample>
 
-```json 200 - Encrypted envelope (raw wire response)
+```json 200 - Success (data shown decrypted)
 {
   "status": 200,
   "message": "Supported networks fetched successfully",
-  "data": "<base64-encoded Ed25519-encrypted payload>"
+  "data": [
+    {
+      "id": "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
+      "name": "Base",
+      "short_name": "BASE",
+      "isDisabled": false,
+      "blockchain": null
+    },
+    {
+      "id": "1f2e3d4c-5b6a-7988-9a0b-c1d2e3f4a5b6",
+      "name": "Polygon",
+      "short_name": "POLYGON",
+      "isDisabled": false,
+      "blockchain": null
+    }
+  ]
 }
-```
-
-```json 200 - Decrypted data payload
-[
-  {
-    "id": "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
-    "name": "Base",
-    "short_name": "BASE",
-    "isDisabled": false,
-    "blockchain": null
-  },
-  {
-    "id": "1f2e3d4c-5b6a-7988-9a0b-c1d2e3f4a5b6",
-    "name": "Polygon",
-    "short_name": "POLYGON",
-    "isDisabled": false,
-    "blockchain": null
-  }
-]
 ```
 
 </ResponseExample>

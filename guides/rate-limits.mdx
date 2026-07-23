@@ -1,21 +1,19 @@
 ---
-title: "cNGN API Rate Limits: Handling Quotas and 429 Errors"
-sidebarTitle: "Rate Limits"
-description: "Understand the cNGN API's 20 requests per 60 seconds per-key quota, how 429 rate-limit responses work, and best practices for staying within limits."
+title: "Rate Limiting"
+description: "Request quotas and how to handle 429 responses"
+icon: "gauge-high"
 ---
 
-The cNGN API enforces rate limits to ensure reliable service for all merchants. Limits are tracked **per API key**, so each merchant has an independent request budget regardless of source IP. If you have multiple integrations using separate API keys, each key has its own independent limit.
+The cNGN API rate-limits requests **per API key**, so each merchant has an independent budget regardless of source IP.
 
-## Rate limit
-
-| Metric | Value |
+| Limit | Value |
 | --- | --- |
-| Request allowance | **20 requests per 60 seconds** per API key |
-| Block duration when exceeded | **60 seconds** |
+| Requests | **20 per 60 seconds** per API key |
+| Block duration when exceeded | 60 seconds |
 
 ## When you exceed the limit
 
-Once you send more than 20 requests within a 60-second window, the API responds to every subsequent request with HTTP `429` until the window resets:
+The API responds with HTTP `429`:
 
 ```json
 {
@@ -24,13 +22,13 @@ Once you send more than 20 requests within a 60-second window, the API responds 
 }
 ```
 
-Once your key is blocked, **all requests with that key are rejected for the full 60-second block period**, including requests that would otherwise succeed. There is no way to unblock the key early — you must wait out the window.
+Once blocked, all requests with that key are rejected for 60 seconds.
 
 ## Best practices
 
 <Tip>
-  - **Back off on 429**: wait at least 60 seconds before retrying after a rate-limit response. Retrying earlier does not help and consumes quota from the next window as soon as it opens.
-  - **Cache stable data**: endpoints like [Get Banks](/api-reference/get-banks) and [Get Networks](/api-reference/get-networks) return data that changes infrequently. Cache the results for hours rather than fetching on every request.
-  - **Batch reads with pagination**: when reading transaction history, use a higher `limit` parameter on [Get Transactions](/api-reference/get-transactions) to retrieve more records per call instead of making many small-page requests.
-  - **Poll with exponential backoff**: if you need to check withdrawal status, poll [Verify Withdrawal](/api-reference/verify-withdrawal) with exponential backoff rather than a tight loop. Start with a 5-second interval and double it on each retry up to a reasonable ceiling.
+- **Back off on 429**: wait at least 60 seconds before retrying; retrying earlier extends nothing and wastes quota.
+- **Cache stable data**: bank lists ([Get Banks](/api-reference/get-banks)) and supported networks ([Get Networks](/api-reference/get-networks)) change rarely; cache them for hours, not seconds.
+- **Batch reads**: use pagination with a higher `limit` on [Get Transactions](/api-reference/get-transactions) instead of many small pages.
+- **Poll responsibly**: for withdrawal status, poll [Verify Withdrawal](/api-reference/verify-withdrawal) with exponential backoff rather than a tight loop.
 </Tip>

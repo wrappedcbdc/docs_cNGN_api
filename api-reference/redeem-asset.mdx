@@ -1,59 +1,48 @@
 ---
-title: "POST /redeemAsset — Redeem cNGN to Nigerian Naira"
-sidebarTitle: "Redeem Asset"
+title: "Redeem Asset"
 api: "POST https://api.cngn.co/v1/api/redeemAsset"
-description: "Burn cNGN and receive the equivalent Nigerian Naira in a nominated bank account. Use Get Banks and Verify Account Details before submitting a redemption."
+description: "Redeem cNGN for Naira, settled to a Nigerian bank account"
 ---
 
-Redemption is the process of converting your cNGN back into Nigerian Naira. When you call this endpoint, the specified amount of cNGN is burned on-chain and the equivalent Naira is disbursed to the destination bank account you provide. The transaction is irreversible once submitted, so you should always verify the destination account with the [Verify Account Details](/api-reference/verify-account-details) endpoint before proceeding.
+Initiates a redemption: cNGN is burned and the equivalent Naira is paid out to the specified bank account.
 
 <Note>
-  This endpoint requires the **Redeem** permission on your API key. The request body must be **AES-256-CBC encrypted** before sending. See the [Encryption guide](/guides/encryption) for implementation details.
+Requires the **Redeem** permission. The request body must be [encrypted](/guides/encryption). Verify the destination account first with [Verify Account Details](/api-reference/verify-account-details).
 </Note>
 
-<Warning>
-  Redemptions cannot be reversed after submission. Always call [Verify Account Details](/api-reference/verify-account-details) first to confirm the account number and name match your intended recipient. Retrieve valid bank codes from [Get Banks](/api-reference/get-banks).
-</Warning>
-
-## Body parameters
-
-Send the plain JSON body below through AES-256-CBC encryption and POST the resulting `{ content, iv }` object.
+### Body parameters (plain payload, pre-encryption)
 
 <ParamField body="amount" type="number" required>
-  Amount of cNGN to redeem. Minimum value is `1`. The equivalent Naira will be disbursed to the destination account.
+  Amount of cNGN to redeem. Minimum `1`.
 </ParamField>
 
 <ParamField body="bankCode" type="string" required>
-  CBN bank code for the destination bank. Retrieve the full list of valid codes from the [Get Banks](/api-reference/get-banks) endpoint.
+  CBN bank code of the destination bank, from [Get Banks](/api-reference/get-banks).
 </ParamField>
 
 <ParamField body="accountNumber" type="string" required>
-  10-digit NUBAN account number at the destination bank. Verify this first with [Verify Account Details](/api-reference/verify-account-details).
+  10-digit destination account number.
 </ParamField>
 
 <ParamField body="saveDetails" type="boolean">
-  When `true`, the provided bank account details are saved to your profile for faster future redemptions. Defaults to `false`.
+  Save these bank details for future redemptions.
 </ParamField>
 
-## Response fields
+### Response (decrypted `data`)
 
 <ResponseField name="trxRef" type="string">
-  Unique redemption transaction reference. Use this to track the status of your redemption via the Get Transactions endpoint.
+  Redemption transaction reference. Track it via [Get Transactions](/api-reference/get-transactions).
 </ResponseField>
 
 <ResponseField name="address" type="string">
-  The on-chain deposit address associated with this redemption.
+  The deposit address associated with the redemption.
 </ResponseField>
-
-<Warning>
-  The `data` field in the raw API response is Ed25519-encrypted and base64-encoded. Decrypt it before use. The examples below show the **decrypted** payload.
-</Warning>
 
 <RequestExample>
 
 ```json Plain body (encrypt before sending)
 {
-  "amount": 10000,
+  "amount": 100000,
   "bankCode": "058",
   "accountNumber": "0123456789",
   "saveDetails": true
@@ -68,38 +57,6 @@ curl -X POST "https://api.cngn.co/v1/api/redeemAsset" \
     "content": "<base64 AES-256-CBC ciphertext of the plain body>",
     "iv": "<base64 16-byte IV>"
   }'
-```
-
-```typescript TypeScript
-import { createCipheriv, randomBytes } from "crypto";
-
-const key = Buffer.from(process.env.AES_KEY!, "hex"); // 32-byte key
-const iv = randomBytes(16);
-
-const plain = JSON.stringify({
-  amount: 10000,
-  bankCode: "058",
-  accountNumber: "0123456789",
-  saveDetails: true,
-});
-
-const cipher = createCipheriv("aes-256-cbc", key, iv);
-const content = Buffer.concat([
-  cipher.update(plain, "utf8"),
-  cipher.final(),
-]).toString("base64");
-
-const response = await fetch("https://api.cngn.co/v1/api/redeemAsset", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${process.env.CNGN_API_KEY}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({ content, iv: iv.toString("base64") }),
-});
-
-const { data: encrypted } = await response.json();
-// Decrypt `encrypted` using your Ed25519 private key
 ```
 
 </RequestExample>
@@ -117,17 +74,10 @@ const { data: encrypted } = await response.json();
 }
 ```
 
-```json 400 - Service unavailable
+```json 400 - Service disabled
 {
   "status": 400,
   "message": "Service is currently unavailable. Please try again later."
-}
-```
-
-```json 403 - Permission denied
-{
-  "status": false,
-  "message": "Permission denied"
 }
 ```
 

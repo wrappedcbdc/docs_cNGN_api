@@ -1,49 +1,24 @@
 ---
-title: "POST /account/verify — Verify a Nigerian Bank Account"
-sidebarTitle: "Verify Account"
+title: "Verify Account Details"
 api: "POST https://api.cngn.co/v1/api/account/verify"
-description: "Resolve a 10-digit Nigerian bank account number to its registered account name before submitting a redemption or updating your settlement bank account."
+description: "Resolve a bank account number to its registered account name"
 ---
 
-Before sending funds to any Nigerian bank account — whether for a redemption or to update your settlement account — you should verify that the account number resolves to the intended recipient. This endpoint performs a real-time lookup against the Nigerian banking infrastructure and returns the registered account name, so you can display it to your user for confirmation before proceeding.
+Resolves a Nigerian bank account and returns the registered account name. Use this before [Redeem Asset](/api-reference/redeem-asset) or [Update Bank Account](/api-reference/update-bank-account) to confirm the destination is correct.
 
 <Note>
-  The request body must be **AES-256-CBC encrypted** before sending. See the [Encryption guide](/guides/encryption) for implementation details. Retrieve valid bank codes from the [Get Banks](/api-reference/get-banks) endpoint.
+The request body must be [encrypted](/guides/encryption).
 </Note>
 
-<Tip>
-  Use this endpoint as a preflight check in your redemption and bank-update flows. Showing the resolved account name to users before they confirm a transaction significantly reduces misdirected payments.
-</Tip>
-
-## Body parameters
-
-Send the plain JSON body below through AES-256-CBC encryption and POST the resulting `{ content, iv }` object.
+### Body parameters (plain payload, pre-encryption)
 
 <ParamField body="bankCode" type="string" required>
-  CBN bank code for the account's bank. Retrieve valid codes from the [Get Banks](/api-reference/get-banks) endpoint.
+  CBN bank code, from [Get Banks](/api-reference/get-banks).
 </ParamField>
 
 <ParamField body="accountNumber" type="string" required>
-  10-digit NUBAN account number to resolve.
+  10-digit account number to resolve.
 </ParamField>
-
-## Response fields
-
-<ResponseField name="accountName" type="string">
-  The registered name on the bank account, as returned by the Nigerian banking infrastructure. Display this to your user for confirmation.
-</ResponseField>
-
-<ResponseField name="accountNumber" type="string">
-  The account number that was verified, echoed back for confirmation.
-</ResponseField>
-
-<ResponseField name="bankCode" type="string">
-  The bank code submitted in your request, echoed back for confirmation.
-</ResponseField>
-
-<Warning>
-  The `data` field in the raw API response is Ed25519-encrypted and base64-encoded. Decrypt it before use. The examples below show the **decrypted** payload.
-</Warning>
 
 <RequestExample>
 
@@ -62,37 +37,6 @@ curl -X POST "https://api.cngn.co/v1/api/account/verify" \
     "content": "<base64 AES-256-CBC ciphertext of the plain body>",
     "iv": "<base64 16-byte IV>"
   }'
-```
-
-```typescript TypeScript
-import { createCipheriv, randomBytes } from "crypto";
-
-const key = Buffer.from(process.env.AES_KEY!, "hex"); // 32-byte key
-const iv = randomBytes(16);
-
-const plain = JSON.stringify({
-  bankCode: "058",
-  accountNumber: "0123456789",
-});
-
-const cipher = createCipheriv("aes-256-cbc", key, iv);
-const content = Buffer.concat([
-  cipher.update(plain, "utf8"),
-  cipher.final(),
-]).toString("base64");
-
-const response = await fetch("https://api.cngn.co/v1/api/account/verify", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${process.env.CNGN_API_KEY}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({ content, iv: iv.toString("base64") }),
-});
-
-const { data: encrypted } = await response.json();
-// Decrypt `encrypted` using your Ed25519 private key
-// Then present `accountName` to your user for confirmation
 ```
 
 </RequestExample>

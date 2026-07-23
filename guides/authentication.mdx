@@ -1,45 +1,35 @@
 ---
-title: "How to Authenticate Your Application with cNGN API"
-sidebarTitle: "Authentication"
-description: "Learn how to authenticate cNGN API requests using Bearer tokens, manage test and live environment keys, and configure IP address whitelisting."
+title: "Authentication"
+description: "API keys, environments, and IP whitelisting"
+icon: "key"
 ---
 
-Every request to the cNGN API must carry an API key as a Bearer token. The key tells the API who you are, which environment you're targeting, and — combined with IP whitelisting — whether your server is authorised to make that call. Understanding how these three layers fit together will save you time when setting up a new integration or rotating credentials.
-
-## Bearer token
-
-Include your API key in the `Authorization` header of every request:
+Every request to the cNGN API must be authenticated with an API key sent as a Bearer token:
 
 ```bash
 Authorization: Bearer cngn_live_xxxxxxxxxxxxx
 ```
 
-The key prefix determines the environment. Both test and live environments share the same base URL (`https://api.cngn.co/v1/api`), so the prefix is the only thing that separates sandbox traffic from production traffic.
-
 ## Environments
 
-<Note>
-  A key from one environment will never authenticate requests in the other. Using a `cngn_test` key on a production integration — or vice versa — fails immediately with `Invalid token prefix`.
-</Note>
+The API key prefix determines the environment. Both environments use the same base URL (`https://api.cngn.co/v1/api`):
 
 | Environment | Key prefix | Behaviour |
 | --- | --- | --- |
-| **Test** | `cngn_test` | Sandbox data; safe for integration testing and development |
+| **Test** | `cngn_test` | Sandbox data; safe for integration testing |
 | **Live** | `cngn_live` | Production; real funds and real bank settlement |
 
-Each environment carries its own independent set of credentials. You will need all three for a working integration:
+Each environment has its own independent set of credentials:
 
-| Credential | Purpose |
-| --- | --- |
-| **API key** | Identifies your business and selects the environment |
-| **Encryption key** | AES key used to encrypt outgoing request bodies |
-| **Ed25519 SSH public key** | Uploaded to the dashboard so the API can encrypt responses back to you |
+- **API key**: identifies your business
+- **Encryption key**: AES key used to encrypt request bodies
+- **Ed25519 SSH public key**: used by the API to encrypt response payloads to you
 
-Generate and manage these credentials from the **merchant dashboard** under your environment's security settings.
+A key from one environment never works against the other's data. Using a token without a recognised prefix fails with `Invalid token prefix`.
 
 ## IP whitelisting
 
-After validating your API key, the cNGN API checks the source IP of the request against your whitelist. If the IP is not on the list, the request is rejected before any business logic runs:
+After the API key check, the request's source IP is validated against your whitelist. Requests from non-whitelisted addresses are rejected:
 
 ```json
 {
@@ -48,24 +38,22 @@ After validating your API key, the cNGN API checks the source IP of the request 
 }
 ```
 
-You manage the whitelist from your merchant dashboard. Make sure you add **every egress IP your infrastructure uses** — this includes load balancers, NAT gateways, serverless function egress ranges, and any other outbound addresses your deployment may use. A missing egress IP is one of the most common causes of unexpected 403 errors in production.
+Manage the whitelist from your merchant dashboard. Remember to add every egress IP your infrastructure uses (load balancers, NAT gateways, serverless egress ranges).
 
 ## Authentication errors
 
-The table below covers every error the authentication layer can return, what causes it, and how to fix it.
-
-| HTTP | Message | Cause | Fix |
-| --- | --- | --- | --- |
-| `400` | `No token provided` | `Authorization` header is missing entirely | Add `Authorization: Bearer <your key>` to every request |
-| `400` | `Invalid token prefix` | Key does not start with `cngn_test` or `cngn_live` | Check that you copied the full key from the dashboard |
-| `400` | `Merchant not found` | Key is not recognised — revoked or mistyped | Regenerate the key in the dashboard and update your deployment |
-| `400` | `No Test SSH Key found` / `No Live SSH Key found` | No Ed25519 public key has been uploaded for this environment | Upload your public key in the dashboard's security settings |
-| `403` | `IP address not whitelisted` | Request came from an IP not on your whitelist | Add the server's egress IP in the dashboard |
+| Message | Cause |
+| --- | --- |
+| `No token provided` | Missing `Authorization` header |
+| `Invalid token prefix` | Key doesn't start with `cngn_test` or `cngn_live` |
+| `Merchant not found` | Key not recognised (revoked or mistyped) |
+| `No Test SSH Key found` / `No Live SSH Key found` | No Ed25519 public key uploaded for that environment |
+| `IP address not whitelisted` | Request came from a non-whitelisted IP |
 
 ## Key rotation and safety
 
 <Tip>
-  - Store API keys and encryption keys in a **secrets manager** (AWS Secrets Manager, HashiCorp Vault, or equivalent). Never commit them to source control or expose them in client-side bundles.
-  - **Rotate immediately** if you suspect a key has been exposed: generate a new key in the dashboard, update your deployment, then revoke the old key.
-  - **Use test keys everywhere outside production infrastructure.** Development machines, CI pipelines, and staging environments should always use `cngn_test` keys, never `cngn_live`.
+- Store keys in a secrets manager, never in code or client-side bundles.
+- Rotate keys immediately if you suspect exposure: generate a new key in the dashboard and update your deployment.
+- Use test keys everywhere except production infrastructure.
 </Tip>

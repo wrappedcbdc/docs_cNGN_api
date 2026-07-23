@@ -1,53 +1,28 @@
 ---
-title: "PUT /bank-account — Update Settlement Bank Account"
-sidebarTitle: "Update Bank Account"
+title: "Update Bank Account"
 api: "PUT https://api.cngn.co/v1/api/bank-account"
-description: "Update the Nigerian bank account on your business profile for fiat settlement. Verify the account with Verify Account Details before submitting."
+description: "Update your business's settlement bank account"
 ---
 
-Your settlement bank account is where cNGN disburses Naira when you redeem tokens or when the platform needs to return funds to your business. Use this endpoint to update that account — for example, when your business changes banks or opens a new account. Because this directly affects where funds are sent, you should always verify the new account number with the [Verify Account Details](/api-reference/verify-account-details) endpoint first and confirm the returned account name matches your intended recipient.
+Updates the bank account associated with your business for fiat settlement.
 
 <Note>
-  The request body must be **AES-256-CBC encrypted** before sending. See the [Encryption guide](/guides/encryption) for implementation details.
+The request body must be [encrypted](/guides/encryption). Verify the account first with [Verify Account Details](/api-reference/verify-account-details).
 </Note>
 
-<Warning>
-  Changing your settlement account is a sensitive operation. Always call [Verify Account Details](/api-reference/verify-account-details) before submitting this request to confirm the account number resolves to the correct account name. An incorrect settlement account could cause funds to be sent to the wrong recipient.
-</Warning>
-
-## Body parameters
-
-Send the plain JSON body below through AES-256-CBC encryption and PUT the resulting `{ content, iv }` object.
+### Body parameters (plain payload, pre-encryption)
 
 <ParamField body="bankName" type="string" required>
-  Full name of the bank (e.g. `"Guaranty Trust Bank"`). This should match the bank name as it appears in the [Get Banks](/api-reference/get-banks) response.
+  Name of the bank.
 </ParamField>
 
 <ParamField body="bankAccountName" type="string" required>
-  The registered account name at the bank. Use the value returned by [Verify Account Details](/api-reference/verify-account-details) to ensure an exact match.
+  Registered account name.
 </ParamField>
 
 <ParamField body="bankAccountNumber" type="string" required>
-  10-digit NUBAN account number. Verify this first with [Verify Account Details](/api-reference/verify-account-details) before submitting.
+  10-digit account number.
 </ParamField>
-
-## Response fields
-
-<ResponseField name="bankName" type="string">
-  The updated bank name as stored on your profile.
-</ResponseField>
-
-<ResponseField name="bankAccountName" type="string">
-  The updated registered account name stored on your profile.
-</ResponseField>
-
-<ResponseField name="bankAccountNumber" type="string">
-  The updated 10-digit account number stored on your profile.
-</ResponseField>
-
-<Warning>
-  The `data` field in the raw API response is Ed25519-encrypted and base64-encoded. Decrypt it before use. The examples below show the **decrypted** payload.
-</Warning>
 
 <RequestExample>
 
@@ -67,37 +42,6 @@ curl -X PUT "https://api.cngn.co/v1/api/bank-account" \
     "content": "<base64 AES-256-CBC ciphertext of the plain body>",
     "iv": "<base64 16-byte IV>"
   }'
-```
-
-```typescript TypeScript
-import { createCipheriv, randomBytes } from "crypto";
-
-const key = Buffer.from(process.env.AES_KEY!, "hex"); // 32-byte key
-const iv = randomBytes(16);
-
-const plain = JSON.stringify({
-  bankName: "Guaranty Trust Bank",
-  bankAccountName: "ACME LTD",
-  bankAccountNumber: "0123456789",
-});
-
-const cipher = createCipheriv("aes-256-cbc", key, iv);
-const content = Buffer.concat([
-  cipher.update(plain, "utf8"),
-  cipher.final(),
-]).toString("base64");
-
-const response = await fetch("https://api.cngn.co/v1/api/bank-account", {
-  method: "PUT",
-  headers: {
-    Authorization: `Bearer ${process.env.CNGN_API_KEY}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({ content, iv: iv.toString("base64") }),
-});
-
-const { data: encrypted } = await response.json();
-// Decrypt `encrypted` using your Ed25519 private key
 ```
 
 </RequestExample>

@@ -1,0 +1,75 @@
+---
+title: "Introduction"
+description: "Welcome to the cNGN API: programmatic access to Africa's first regulated stablecoin"
+icon: "house"
+---
+
+## What is cNGN?
+
+cNGN is a regulated Naira-backed stablecoin. The cNGN API gives businesses and third-party integrators programmatic access to mint, redeem, transfer, and bridge cNGN across multiple blockchain networks, with fiat on-ramps and off-ramps through Nigerian bank accounts.
+
+## What you can do with the API
+
+<CardGroup cols={2}>
+  <Card title="Check balances" icon="wallet" href="/api-reference/get-balance">
+    Retrieve your cNGN balance across supported networks.
+  </Card>
+  <Card title="Accept deposits" icon="building-columns" href="/api-reference/get-virtual-account">
+    Collect Naira through dedicated or temporary virtual bank accounts and receive cNGN.
+  </Card>
+  <Card title="Redeem to fiat" icon="money-bill-transfer" href="/api-reference/redeem-asset">
+    Convert cNGN back to Naira, settled directly to a Nigerian bank account.
+  </Card>
+  <Card title="Withdraw on-chain" icon="arrow-up-right-from-square" href="/api-reference/withdraw">
+    Send cNGN to any whitelisted external wallet address.
+  </Card>
+  <Card title="Bridge across chains" icon="bridge" href="/api-reference/bridge">
+    Move cNGN between supported blockchain networks.
+  </Card>
+  <Card title="Track transactions" icon="list-check" href="/api-reference/get-transactions">
+    Query your full transaction history with pagination.
+  </Card>
+</CardGroup>
+
+## Base URL
+
+All API requests are made to:
+
+```text
+https://api.cngn.co/v1/api
+```
+
+The same base URL serves both environments. Your API key prefix (`cngn_test` or `cngn_live`) determines whether a request runs against the sandbox or production environment. See [Authentication](/guides/authentication).
+
+## Security model
+
+The cNGN API is designed for institutional-grade security. Every integration uses three layers:
+
+1. **API key authentication**: a Bearer token identifies your business and environment.
+2. **IP whitelisting**: requests are only accepted from IP addresses you have whitelisted in your dashboard.
+3. **Payload encryption**: request bodies are encrypted with AES-256-CBC, and response payloads are encrypted to your Ed25519 public key. See the [Encryption guide](/guides/encryption).
+
+## SDKs
+
+Official libraries for TypeScript, Python, PHP, and Java handle authentication and payload encryption for you.
+
+<Card title="Libraries & SDKs" icon="cubes" href="/sdks" horizontal>
+  Browse the supported libraries and their repositories.
+</Card>
+
+## Next steps
+
+<Steps>
+  <Step title="Get your API keys">
+    Generate test and live API keys from the cNGN merchant dashboard.
+  </Step>
+  <Step title="Follow the Quickstart">
+    Make your first authenticated request in the [Quickstart](/quickstart).
+  </Step>
+  <Step title="Set up encryption">
+    Configure request encryption and response decryption in the [Encryption guide](/guides/encryption).
+  </Step>
+  <Step title="Go live">
+    Run through the [Going Live Checklist](/going-live) before switching to production keys.
+  </Step>
+</Steps>

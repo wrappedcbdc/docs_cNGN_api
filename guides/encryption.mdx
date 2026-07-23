@@ -1,18 +1,21 @@
 ---
-title: "How to Encrypt Requests and Decrypt cNGN Responses"
-sidebarTitle: "Encryption"
-description: "Encrypt POST and PUT request bodies with AES-256-CBC and decrypt cNGN API response payloads using your Ed25519 private key and libsodium."
+title: "Encryption"
+description: "Encrypt request bodies and decrypt response payloads"
+icon: "lock"
 ---
 
-The cNGN API encrypts payloads in both directions. Outgoing request bodies — sent on `POST` and `PUT` endpoints — must be encrypted by you using **AES-256-CBC** before they leave your server. Incoming responses have their `data` field encrypted by the API to your **Ed25519 public key**, so only you can read the result. This two-way encryption ensures that sensitive financial data is protected both in transit and at rest in logs or proxies.
+The cNGN API encrypts payloads in both directions:
+
+- **Requests** (`POST`/`PUT` bodies): you encrypt the JSON payload with **AES-256-CBC** using the encryption key from your dashboard.
+- **Responses**: the API encrypts the `data` field of every successful response to your **Ed25519 public key**. You decrypt it locally with your private key.
 
 <Tip>
-  The official [cNGN SDKs](/sdks) handle both sides of this automatically. Read on only if you are integrating directly over HTTP without an SDK.
+The official [SDKs](/sdks) implement both sides of this automatically. Read on only if you're integrating directly over HTTP.
 </Tip>
 
 ## Encrypting requests (AES-256-CBC)
 
-Every endpoint that accepts a request body expects this wire format instead of plain JSON:
+Every endpoint that accepts a body expects this wire format instead of the plain JSON:
 
 ```json
 {
@@ -21,22 +24,14 @@ Every endpoint that accepts a request body expects this wire format instead of p
 }
 ```
 
-<Steps>
-  <Step title="Hash your encryption key">
-    SHA-256 hash your encryption key to derive a 32-byte AES key. This ensures the key is always the correct length regardless of how it was generated.
-  </Step>
-  <Step title="Generate a random IV">
-    Generate a fresh random 16-byte initialization vector (IV) for each request. Reusing IVs weakens the encryption.
-  </Step>
-  <Step title="Encrypt with AES-256-CBC">
-    Encrypt the JSON string of your payload using AES-256-CBC with the derived key and the random IV.
-  </Step>
-  <Step title="Base64-encode and send">
-    Base64-encode both the ciphertext and the IV, then send them as `content` and `iv` in the request body.
-  </Step>
-</Steps>
+Steps:
 
-The full `AESCrypto` class implementations are shown below. The `decrypt` method is included for local round-trip testing.
+1. SHA-256 hash your encryption key to derive a 32-byte AES key.
+2. Generate a random 16-byte initialization vector (IV); use a fresh one per request.
+3. Encrypt the JSON string with AES-256-CBC.
+4. Base64-encode the ciphertext and the IV, and send them as `content` and `iv`.
+
+The official `AESCrypto` implementations (the `decrypt` method is included for local round-trip testing):
 
 <CodeGroup>
 
@@ -200,15 +195,15 @@ class AESCrypto
 
 </CodeGroup>
 
-**Usage:** `AESCrypto.encrypt(JSON.stringify(payload), encryptionKey)` returns the `{ content, iv }` object to send as the request body.
+Usage: `AESCrypto.encrypt(JSON.stringify(payload), encryptionKey)` returns the `{content, iv}` object to send as the request body.
 
 <Warning>
-  Sending a plain JSON body to a `POST` or `PUT` endpoint fails with `400 Missing encryption data, key, or IV`. A body that is encrypted with the wrong key or a malformed IV fails with `400 Decryption failed`. Always encrypt before sending.
+Sending a plain JSON body to a `POST`/`PUT` endpoint fails with `400 Missing encryption data, key, or IV`. A body that can't be decrypted fails with `400 Decryption failed`.
 </Warning>
 
 ## Decrypting responses (Ed25519 / Curve25519)
 
-Successful responses return an encrypted base64 string in the `data` field:
+Successful responses return an encrypted base64 string in `data`:
 
 ```json
 {
@@ -218,15 +213,15 @@ Successful responses return an encrypted base64 string in the `data` field:
 }
 ```
 
-The payload is encrypted with libsodium's `crypto_box` to your Ed25519 public key (converted internally to Curve25519). When you base64-decode the `data` string, the resulting blob has this layout:
+The payload is encrypted with libsodium's `crypto_box` to your Ed25519 public key (converted to Curve25519). The base64-decoded blob is laid out as:
 
 | Bytes | Content |
 | --- | --- |
-| `0` to `23` | 24-byte nonce |
-| `24` to `(n - 32)` | Ciphertext |
-| Last `32` bytes | Ephemeral public key |
+| 0 to 23 | 24-byte nonce |
+| 24 to (n-32) | ciphertext |
+| last 32 | ephemeral public key |
 
-The `Ed25519Crypto` implementations below take your OpenSSH-format private key (the `cngn_api_key` file you generated) directly. They locate the 64-byte key data after the `0x00 0x00 0x00 0x40` length marker, convert it to Curve25519, and open the box:
+The official `Ed25519Crypto` implementations take your OpenSSH-format private key (the `cngn_api_key` file) directly; they locate the 64-byte key data after the `0x00 0x00 0x00 0x40` length marker, convert it to Curve25519, and open the box:
 
 <CodeGroup>
 
@@ -431,13 +426,13 @@ class Ed25519Crypto
 
 </CodeGroup>
 
-**Usage:** `Ed25519Crypto.decryptWithPrivateKey(privateKeyFileContents, response.data)` returns the decrypted JSON string. Parse it with `JSON.parse()` (or your language's equivalent) to access the payload.
+Usage: `Ed25519Crypto.decryptWithPrivateKey(privateKeyFileContents, response.data)` returns the decrypted JSON string; parse it to get the payload.
 
 ## Key management summary
 
 | Key | Direction | Where it lives |
 | --- | --- | --- |
-| API key (`cngn_test...` / `cngn_live...`) | Request authentication | Your server environment + dashboard |
-| Encryption key (AES) | Request body encryption (outbound) | Your server environment + dashboard |
-| Ed25519 public key | Response encryption — API side (inbound) | Uploaded to the dashboard; safe to share |
-| Ed25519 private key | Response decryption — your side (inbound) | Your server only; **never share or upload** |
+| API key (`cngn_test...` / `cngn_live...`) | Request auth | Your server + dashboard |
+| Encryption key (AES) | Request body encryption | Your server + dashboard |
+| Ed25519 public key | Response encryption (API-side) | Uploaded to dashboard |
+| Ed25519 private key | Response decryption (your side) | Your server only; never share |

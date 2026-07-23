@@ -1,55 +1,38 @@
 ---
-title: "POST /whitelist — Whitelist a Wallet for Withdrawals"
-sidebarTitle: "Whitelist Address"
+title: "Whitelist Address"
 api: "POST https://api.cngn.co/v1/api/whitelist"
-description: "Register an external wallet address on a specific network so it is authorised to receive cNGN withdrawals from your account. Returns the updated whitelist."
+description: "Whitelist an external wallet address for withdrawals"
 ---
 
-Use this endpoint to register an external wallet address against a specific network, authorising it to receive cNGN withdrawals from your account. Once whitelisted, the address can be passed directly to [Withdraw](/api-reference/withdraw), or it will be auto-accepted if your account requires address pre-approval. Your request body must be AES-256-CBC encrypted and sent as `{ content, iv }` — see the [Encryption guide](/guides/encryption) for how to prepare the payload. After a successful call, the response returns your **full updated list** of whitelisted addresses, so you always have the current state in a single round-trip.
+Registers an external wallet address against a network so it can receive withdrawals from your account.
 
 <Note>
-  The `data` field in every response is Ed25519-encrypted. The examples on this page show the **decrypted** payload for readability.
+The request body must be [encrypted](/guides/encryption).
 </Note>
 
-## Request body
-
-The fields below describe the **plain JSON object you encrypt before sending**. Do not send these fields directly — wrap the encrypted result in `{ "content": "<ciphertext>", "iv": "<iv>" }`.
+### Body parameters (plain payload, pre-encryption)
 
 <ParamField body="networkId" type="string" required>
-  ID of the network the address belongs to. Retrieve valid IDs from [Get Networks](/api-reference/get-networks).
+  Network the address belongs to. See [Get Networks](/api-reference/get-networks).
 </ParamField>
 
 <ParamField body="address" type="string" required>
-  The external wallet address you want to whitelist. Must be a valid address format for the specified network.
+  The wallet address to whitelist.
 </ParamField>
 
-## Response
+### Response (decrypted `data`)
 
-Returns your updated list of all whitelisted addresses across all networks as an array.
+Returns your updated list of whitelisted addresses.
 
 <ResponseField name="data" type="object[]">
   <Expandable title="Whitelisted address object">
-    <ResponseField name="id" type="string">
-      Unique identifier for this whitelist entry.
-    </ResponseField>
-    <ResponseField name="networkId" type="string">
-      ID of the network this address is whitelisted on.
-    </ResponseField>
-    <ResponseField name="publicKey" type="string">
-      The whitelisted external wallet address.
-    </ResponseField>
-    <ResponseField name="internalPublicKey" type="string">
-      Internal deposit address paired to this whitelist entry by cNGN.
-    </ResponseField>
-    <ResponseField name="network" type="object">
-      Network summary object (`id`, `name`, `short_name`). Present when `includeNetwork=true` is used on [Get Whitelisted Addresses](/api-reference/get-whitelisted-addresses).
-    </ResponseField>
-    <ResponseField name="created_at" type="string">
-      ISO 8601 timestamp when the entry was created.
-    </ResponseField>
-    <ResponseField name="updated_at" type="string">
-      ISO 8601 timestamp of the most recent update to this entry.
-    </ResponseField>
+    <ResponseField name="id" type="string">Whitelist entry ID.</ResponseField>
+    <ResponseField name="networkId" type="string">Network the address is whitelisted on.</ResponseField>
+    <ResponseField name="publicKey" type="string">The whitelisted wallet address.</ResponseField>
+    <ResponseField name="internalPublicKey" type="string">Internal deposit address paired to this entry.</ResponseField>
+    <ResponseField name="network" type="object">Network summary (`id`, `name`, `short_name`) when included.</ResponseField>
+    <ResponseField name="created_at" type="string">ISO 8601 creation timestamp.</ResponseField>
+    <ResponseField name="updated_at" type="string">ISO 8601 last-update timestamp.</ResponseField>
   </Expandable>
 </ResponseField>
 
@@ -58,11 +41,11 @@ Returns your updated list of all whitelisted addresses across all networks as an
 ```json Plain body (encrypt before sending)
 {
   "networkId": "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
-  "address": "0xAbCdEf1234567890AbCdEf1234567890AbCdEf12"
+  "address": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72"
 }
 ```
 
-```bash cURL
+```bash cURL (wire format)
 curl -X POST "https://api.cngn.co/v1/api/whitelist" \
   -H "Authorization: Bearer YOUR_API_KEY" \
   -H "Content-Type: application/json" \
@@ -70,26 +53,6 @@ curl -X POST "https://api.cngn.co/v1/api/whitelist" \
     "content": "<base64 AES-256-CBC ciphertext of the plain body>",
     "iv": "<base64 16-byte IV>"
   }'
-```
-
-```typescript TypeScript
-const payload = JSON.stringify({
-  networkId: "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
-  address: "0xAbCdEf1234567890AbCdEf1234567890AbCdEf12",
-});
-
-// Encrypt `payload` with AES-256-CBC, then send:
-const res = await fetch("https://api.cngn.co/v1/api/whitelist", {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${API_KEY}`,
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({ content: encryptedContent, iv: encryptedIv }),
-});
-
-const { data } = await res.json();
-// Decrypt `data` with your Ed25519 private key to read the updated list
 ```
 
 </RequestExample>
@@ -104,7 +67,7 @@ const { data } = await res.json();
     {
       "id": "7a8b9c0d-1e2f-4a3b-9c4d-5e6f7a8b9c0d",
       "networkId": "9b2e6a1f-3c4d-4e5f-8a7b-1c2d3e4f5a6b",
-      "publicKey": "0xAbCdEf1234567890AbCdEf1234567890AbCdEf12",
+      "publicKey": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
       "internalPublicKey": "0x3cD4e5F6a7B8c9D0e1F2a3B4c5D6e7F8a9B0c1D2",
       "created_at": "2026-07-22T10:15:00.000Z",
       "updated_at": "2026-07-22T10:15:00.000Z"

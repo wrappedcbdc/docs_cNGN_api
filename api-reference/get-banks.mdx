@@ -1,33 +1,23 @@
 ---
-title: "GET /banks — List Supported Nigerian Banks and Codes"
-sidebarTitle: "Get Banks"
+title: "Get Banks"
 api: "GET https://api.cngn.co/v1/api/banks"
-description: "Retrieve all Nigerian banks supported for cNGN redemptions and account verification, including their CBN bank codes to use in other endpoints."
+description: "List supported Nigerian banks and their codes"
 ---
 
-Before you can redeem cNGN or verify a bank account, you need the correct CBN bank code for the destination bank. This endpoint returns every bank currently supported by cNGN, along with the `code` value you should pass as `bankCode` in the [Redeem Asset](/api-reference/redeem-asset) and [Verify Account Details](/api-reference/verify-account-details) endpoints.
+Returns the list of banks supported for redemptions and account verification, with their CBN bank codes.
 
 <Tip>
-  The list of supported banks changes rarely. Cache the response for several hours rather than fetching it on every request — this keeps your integration fast and avoids unnecessary API calls.
+The bank list changes rarely; cache it for hours rather than fetching on every request.
 </Tip>
 
-## Response fields
+### Response (decrypted `data`)
 
 <ResponseField name="data" type="object[]">
-  Array of supported bank objects.
   <Expandable title="Bank object">
-    <ResponseField name="name" type="string">
-      Full name of the bank as registered with the CBN.
-    </ResponseField>
-    <ResponseField name="code" type="string">
-      CBN-assigned bank code. Pass this value as `bankCode` in [Redeem Asset](/api-reference/redeem-asset) and [Verify Account Details](/api-reference/verify-account-details).
-    </ResponseField>
+    <ResponseField name="name" type="string">Bank name.</ResponseField>
+    <ResponseField name="code" type="string">CBN bank code. Use it as `bankCode` in other endpoints.</ResponseField>
   </Expandable>
 </ResponseField>
-
-<Warning>
-  The `data` field in the raw API response is Ed25519-encrypted and base64-encoded. Decrypt it before use. The examples below show the **decrypted** payload.
-</Warning>
 
 <RequestExample>
 
@@ -37,16 +27,16 @@ curl -X GET "https://api.cngn.co/v1/api/banks" \
 ```
 
 ```typescript TypeScript
-const response = await fetch("https://api.cngn.co/v1/api/banks", {
-  method: "GET",
-  headers: {
-    Authorization: `Bearer ${process.env.CNGN_API_KEY}`,
-  },
+const res = await fetch("https://api.cngn.co/v1/api/banks", {
+  headers: { Authorization: `Bearer ${API_KEY}` },
 });
+```
 
-const { data: encrypted } = await response.json();
-// Decrypt `encrypted` using your Ed25519 private key
-// Cache the resulting bank list for several hours
+```python Python
+res = requests.get(
+    "https://api.cngn.co/v1/api/banks",
+    headers={"Authorization": f"Bearer {API_KEY}"},
+)
 ```
 
 </RequestExample>

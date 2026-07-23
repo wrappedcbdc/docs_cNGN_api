@@ -1,0 +1,43 @@
+---
+title: "Changelog"
+description: "Notable changes and additions to the cNGN API and its documentation"
+icon: "clock-rotate-left"
+---
+
+<Update label="July 23, 2026" description="Webhooks">
+  ## Full webhook event coverage
+
+  Every documented [webhook event](/guides/webhooks) is now delivered:
+
+  - **On-chain deposits** now fire `deposit.completed` with `trx_type: crypto_deposit`,
+    carrying both the source-network hash (`extl_trx_hash`) and the mint hash
+    (`base_trx_hash`). There is no preceding `deposit.received` for on-chain deposits.
+  - **Redemptions** now fire `redemption.completed` when the bank payout settles, and
+    `transaction.failed` (with `reason: "Provider failed to process payout"`) when it
+    does not. Redeemed cNGN is automatically reverted to your balance on payout failure.
+  - The [Webhooks guide](/guides/webhooks#sample-payloads-per-event) now documents exact
+    sample payloads for all five events, including the three `transaction.failed`
+    variants, plus a field-presence matrix.
+</Update>
+
+<Update label="July 22, 2026" description="API">
+  ## New endpoint: Bridge Quote
+
+  [`POST /bridge-quote`](/api-reference/bridge-quote) returns the receivable amount,
+  network fee, and bridge fee for a cross-network bridge before you commit to it with
+  [`POST /bridge`](/api-reference/bridge). Requires the **Swap** permission; the request
+  body follows the standard [encrypted wire format](/guides/encryption).
+</Update>
+
+<Update label="July 22, 2026" description="Documentation">
+  ## New documentation site
+
+  Launch of this documentation site, covering the full third-party API surface:
+
+  - [Quickstart](/quickstart) and a [Going Live Checklist](/going-live)
+  - A dedicated [Security](/guides/security) tab: API keys, SSH keys, and the official
+    encryption/decryption implementations in TypeScript, Python, and PHP
+  - Reference pages for all endpoints with decrypted request and response examples
+  - [Webhooks](/guides/webhooks), [Contract Addresses](/guides/contract-addresses),
+    [Rate Limiting](/guides/rate-limits), and a full [Error Reference](/guides/errors)
+</Update>
