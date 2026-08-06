@@ -4,6 +4,18 @@ description: "Notable changes and additions to the cNGN API and its documentatio
 icon: "clock-rotate-left"
 ---
 
+<Update label="August 6, 2026" description="Networks">
+  ## Celo support
+
+  cNGN is now deployed on Celo. The [Contract Addresses](/guides/contract-addresses) page
+  lists both the mainnet contract (`0xF6829D7393dAe24509eb1E52eE8e572e2E271a4f`) and the
+  testnet contract (`0xa188439ccCEe9A6aa0E842f9c17C1b00C7B4dd4D`).
+
+  Celo is an EVM chain, so withdrawals, bridging, and address whitelisting work exactly as
+  they do on the other EVM networks. Resolve its `networkId` per environment from
+  [Get Networks](/api-reference/get-networks); see the [Networks guide](/guides/networks).
+</Update>
+
 <Update label="July 23, 2026" description="Webhooks">
   ## Full webhook event coverage
 
