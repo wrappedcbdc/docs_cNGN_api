@@ -25,6 +25,7 @@
     "tabs": [
       {
         "tab": "Documentation",
+        "icon": "book",
         "groups": [
           {
             "group": "Get Started",
@@ -53,6 +54,7 @@
       },
       {
         "tab": "Security",
+        "icon": "shield-halved",
         "groups": [
           {
             "group": "Overview",
@@ -77,6 +79,7 @@
       },
       {
         "tab": "API Reference",
+        "icon": "code",
         "groups": [
           {
             "group": "Overview",
@@ -128,6 +131,7 @@
       },
       {
         "tab": "Changelog",
+        "icon": "clock-rotate-left",
         "groups": [
           {
             "group": "Changelog",
@@ -143,7 +147,8 @@
     "links": [
       {
         "label": "Website",
-        "href": "https://cngn.co"
+        "href": "https://cngn.co",
+        "icon": "globe"
       }
     ],
     "primary": {
