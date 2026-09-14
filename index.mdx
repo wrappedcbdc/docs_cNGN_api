@@ -49,13 +49,18 @@ The cNGN API is designed for institutional-grade security. Every integration use
 2. **IP whitelisting**: requests are only accepted from IP addresses you have whitelisted in your dashboard.
 3. **Payload encryption**: request bodies are encrypted with AES-256-CBC, and response payloads are encrypted to your Ed25519 public key. See the [Encryption guide](/guides/encryption).
 
-## SDKs
+## SDKs and tooling
 
-Official libraries for TypeScript, Python, PHP, and Java handle authentication and payload encryption for you.
+Official libraries for TypeScript, Python, PHP, and Java handle authentication and payload encryption for you. If you build with a coding agent, the cNGN API skill teaches it the rules on this site.
 
-<Card title="Libraries & SDKs" icon="cubes" href="/sdks" horizontal>
-  Browse the supported libraries and their repositories.
-</Card>
+<CardGroup cols={2}>
+  <Card title="Libraries & SDKs" icon="cubes" href="/sdks">
+    Browse the supported libraries and their repositories.
+  </Card>
+  <Card title="AI Agent Skill" icon="robot" href="/ai-agents">
+    Install cNGN integration knowledge into Claude Code, Cursor, Codex, and other agents.
+  </Card>
+</CardGroup>
 
 ## Next steps
 

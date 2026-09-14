@@ -17,13 +17,21 @@ ssh-keygen -t ed25519 -C "your_email@example.com"
 The command prompts you for:
 
 - **Save location**: press Enter to accept the default (`~/.ssh/id_ed25519`), or provide a dedicated path such as `~/.ssh/cngn_api_key`
-- **Passphrase**: optional; press Enter to skip
+- **Passphrase**: press Enter to skip; see the warning below
 
 This produces two files: the private key (`id_ed25519`) and the public key (`id_ed25519.pub`).
 
-<Note>
-If you set a passphrase, your integration needs it to load the private key when decrypting responses. For server-side automation, most teams skip the passphrase and rely on filesystem permissions and secret management instead.
-</Note>
+<Warning>
+**Do not set a passphrase.** A passphrase encrypts the private section of the key file, and the decryption implementations in the [Encryption guide](/guides/encryption) read the raw Ed25519 key bytes directly, so they cannot open it. Decryption fails with `Unable to find Ed25519 key data`.
+
+Protect the private key with filesystem permissions and a secrets manager instead. To skip the prompt entirely:
+
+```bash
+ssh-keygen -t ed25519 -C "your_email@example.com" -f ~/.ssh/cngn_api_key -N ""
+```
+
+To check an existing key, base64-decode the second line of the private key file: an unprotected key reads `openssh-key-v1` followed by `none`, while a passphrase-protected one reads `aes256-ctr` and `bcrypt`.
+</Warning>
 
 </Step>
 

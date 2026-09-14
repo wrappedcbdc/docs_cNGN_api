@@ -4,6 +4,23 @@ description: "Notable changes and additions to the cNGN API and its documentatio
 icon: "clock-rotate-left"
 ---
 
+<Update label="September 14, 2026" description="Tooling">
+  ## AI agent skill
+
+  The [cNGN API skill](/ai-agents) packages this documentation for coding agents. Install
+  it into Claude Code with `/plugin marketplace add wrappedcbdc/cNGN_api_skill`, or point
+  any agent that reads `AGENTS.md` at the repository.
+
+  It covers the parts of the API that are easy to get wrong from REST conventions alone:
+  the [encrypted wire format](/guides/encryption) in both directions, per-environment
+  [network IDs](/guides/networks), and the retry rules for money-moving endpoints. The
+  repository also ships an OpenAPI 3.1 description and scripts that encrypt a request body
+  or decrypt a response payload locally, which is the quickest way to tell a key problem
+  from an API problem.
+
+  Source: [wrappedcbdc/cNGN_api_skill](https://github.com/wrappedcbdc/cNGN_api_skill).
+</Update>
+
 <Update label="August 6, 2026" description="Networks">
   ## Celo support
 
