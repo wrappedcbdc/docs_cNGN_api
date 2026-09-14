@@ -1,0 +1,179 @@
+---
+title: "AI Agent Skill"
+description: "Give your coding agent the cNGN integration rules it needs to write correct API calls"
+icon: "robot"
+---
+
+The cNGN API skill packages this documentation into a form coding agents can load
+directly. Install it once, and your agent writes cNGN integrations that encrypt payloads
+correctly, resolve network IDs per environment, and handle money-moving endpoints safely,
+without you pasting the rules into every prompt.
+
+<Card title="wrappedcbdc/cNGN_api_skill" icon="github" href="https://github.com/wrappedcbdc/cNGN_api_skill" horizontal>
+  Source repository for the skill.
+</Card>
+
+<Note>
+The skill teaches an agent how the API behaves. It is not a runtime dependency and it does
+not replace the [official SDKs](/sdks), which do the actual encryption work in your
+application.
+</Note>
+
+## Why agents need it
+
+Three parts of this API are easy to get wrong from general knowledge alone, and the skill
+front-loads all three:
+
+<AccordionGroup>
+
+<Accordion title="Payloads are encrypted in both directions" icon="lock">
+`POST` and `PUT` bodies must be AES-256-CBC encrypted into `{content, iv}`, and the `data`
+field of every success response is encrypted to your Ed25519 public key. An agent working
+from REST conventions alone sends plain JSON and gets
+`400 Missing encryption data, key, or IV`. See [Encryption](/guides/encryption).
+</Accordion>
+
+<Accordion title="Network IDs are environment-specific" icon="circle-nodes">
+`networkId` is a database identifier that differs between test and live. Agents like to
+hard-code identifiers they have seen once. The skill requires resolving them at runtime
+from [Get Networks](/api-reference/get-networks) and skipping networks where `isDisabled`
+is `true`. See [Networks](/guides/networks).
+</Accordion>
+
+<Accordion title="Money-moving endpoints must not be retried blindly" icon="triangle-exclamation">
+A timeout on [Redeem Asset](/api-reference/redeem-asset), [Withdraw](/api-reference/withdraw),
+or [Bridge](/api-reference/bridge) does not mean the request was not processed. The skill
+requires confirming state with [Verify Withdrawal](/api-reference/verify-withdrawal) or
+[Get Transactions](/api-reference/get-transactions) before any retry. See
+[Error Reference](/guides/errors).
+</Accordion>
+
+</AccordionGroup>
+
+## What it covers
+
+| Area | Contents |
+| --- | --- |
+| Endpoints | Every endpoint with parameters, decrypted payload shapes, and worked examples |
+| Encryption | AES-256-CBC requests and Ed25519 response decryption, in TypeScript, Python, and PHP |
+| Webhooks | The five event types, per-event field presence, and signature verification |
+| Errors | Every documented error message, its cause, and whether it is retryable |
+| Networks | Resolving `networkId`, plus the official token contract addresses per chain |
+| Tooling | An OpenAPI 3.1 description, and runnable scripts that encrypt a body or decrypt a response payload |
+
+## Install for Claude Code
+
+<Steps>
+
+<Step title="Add the marketplace">
+
+```bash
+/plugin marketplace add wrappedcbdc/cNGN_api_skill
+```
+
+</Step>
+
+<Step title="Install the plugin">
+
+```bash
+/plugin install cngn-api@cngn-skills
+```
+
+</Step>
+
+<Step title="Start building">
+
+The skill activates on its own when a task mentions cNGN, `cngn_test` or `cngn_live` keys,
+or Naira stablecoin payouts. Invoke it explicitly with `/cngn-api`.
+
+</Step>
+
+</Steps>
+
+## Use with other agents
+
+Every file in the skill is plain Markdown with no tool-specific syntax, so any agent can
+read it.
+
+<Tabs>
+
+<Tab title="Codex, Cursor, Gemini CLI">
+
+These read `AGENTS.md` from your repository root. Clone the skill into your project, or
+copy `AGENTS.md` and the `skills/cngn-api/` directory into it:
+
+```bash
+git clone https://github.com/wrappedcbdc/cNGN_api_skill
+cp -r cNGN_api_skill/AGENTS.md cNGN_api_skill/skills ./
+```
+
+</Tab>
+
+<Tab title="Claude API and claude.ai">
+
+Zip the skill directory and upload it as a Skill. The `SKILL.md` file already carries the
+required `name` and `description` frontmatter:
+
+```bash
+cd cNGN_api_skill/skills && zip -r cngn-api.zip cngn-api
+```
+
+</Tab>
+
+<Tab title="GitHub Copilot">
+
+Copy the "Non-negotiables" section of `AGENTS.md` into
+`.github/copilot-instructions.md` in your repository.
+
+</Tab>
+
+<Tab title="Tool-calling agents">
+
+Load `openapi/cngn-v1.yaml`. It describes the encrypted wire format, and names the
+decrypted payload schema for each operation through the `x-cngn-plaintext-request` and
+`x-cngn-plaintext-response` extensions, so generated types match what you encrypt and
+decrypt rather than what travels on the wire.
+
+</Tab>
+
+</Tabs>
+
+## Verifying your keys
+
+The skill ships a helper that exercises both encryption directions locally, which is the
+fastest way to tell a key problem from an API problem:
+
+```bash
+# Confirm your encryption key round-trips
+python3 skills/cngn-api/scripts/cngn_crypto.py selftest "$CNGN_ENCRYPTION_KEY"
+
+# Encrypt a request body into the wire format
+python3 skills/cngn-api/scripts/cngn_crypto.py encrypt '{"amount":1000}' -
+
+# Decrypt a response `data` field
+python3 skills/cngn-api/scripts/cngn_crypto.py decrypt "<base64 data>" ./cngn_api_key
+```
+
+Passing `-` as the key reads `CNGN_ENCRYPTION_KEY` from the environment, so the secret
+stays out of your shell history.
+
+<Warning>
+Generate your Ed25519 key pair without a passphrase (`ssh-keygen -t ed25519 -f cngn_api_key -N ""`).
+A passphrase encrypts the private section of the file, and the decryption implementations
+then fail with `Unable to find Ed25519 key data`. Protect the file with filesystem
+permissions and a secrets manager instead. See [Generating SSH Keys](/guides/security/generating-ssh-keys).
+</Warning>
+
+<Tip>
+Never let an agent write an API key, encryption key, or Ed25519 private key into source
+control, a client-side bundle, or a mobile app. All cNGN credentials are server-side only.
+</Tip>
+
+## Staying current
+
+The skill is generated from this documentation site, which is in turn documented from the
+cNGN API itself. When an endpoint changes here, the matching reference file and the
+OpenAPI description in the skill repository are updated and its version is bumped.
+
+Re-run `/plugin marketplace update cngn-skills` in Claude Code, or pull the repository, to
+pick up changes.
