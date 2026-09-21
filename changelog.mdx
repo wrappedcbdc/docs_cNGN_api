@@ -4,6 +4,27 @@ description: "Notable changes and additions to the cNGN API and its documentatio
 icon: "clock-rotate-left"
 ---
 
+<Update label="September 21, 2026" description="API">
+  ## Get a single transaction
+
+  The new [Get Transaction](/api-reference/get-transaction) endpoint,
+  `GET /transactions/{tnxRef}`, returns one transaction by its reference, so you no longer
+  have to page through [Get Transactions](/api-reference/get-transactions) to check a
+  single deposit, withdrawal, redemption, or bridge.
+
+  [Verify Withdrawal](/api-reference/verify-withdrawal) is now scoped to your business as
+  well: a reference that belongs to another business returns `Transaction not found`.
+
+  ### New `bridge.completed` webhook
+
+  A new [`bridge.completed`](/guides/webhooks) event fires when a bridge settles and the
+  cNGN is minted on the destination network. Subscribe to it like any other event. Failed
+  bridges fire `transaction.failed` with `trx_type` `swap`.
+
+  The TypeScript library exposes this as `getTransaction(tnxRef)`, and the
+  [AI agent skill](/ai-agents) (v1.1.0) documents the endpoint.
+</Update>
+
 <Update label="September 14, 2026" description="Tooling">
   ## AI agent skill
 

@@ -28,7 +28,7 @@ Add a signing secret in the dashboard. cNGN uses it to sign every delivery so yo
 
 <Step title="Subscribe to events">
 
-Choose which of the five event types (below) your endpoint should receive. Subscribe only to what you act on; you can change subscriptions at any time.
+Choose which of the six event types (below) your endpoint should receive. Subscribe only to what you act on; you can change subscriptions at any time.
 
 </Step>
 
@@ -48,6 +48,7 @@ Validate the signature, queue the event for processing, and return a `2xx` immed
 | `deposit.completed` | A deposit (fiat or on-chain) has been fully processed and cNGN credited to your balance. |
 | `redemption.completed` | A redemption has settled; Naira has been paid out to the bank account. |
 | `withdrawal.completed` | An on-chain withdrawal has been confirmed on the network. |
+| `bridge.completed` | A [bridge](/api-reference/bridge) has settled: cNGN was minted on the destination network. |
 | `transaction.failed` | Any transaction has failed or been rejected. The `reason` field explains why. |
 
 <Tip>
@@ -67,7 +68,7 @@ Every delivery is an HTTPS `POST` with the same JSON envelope:
 ```
 
 <ResponseField name="event" type="string">
-  One of the five event types above.
+  One of the six event types above.
 </ResponseField>
 
 <ResponseField name="data" type="object">
@@ -240,6 +241,37 @@ Fires when an on-chain withdrawal is confirmed on the destination network. This 
 
 </Tab>
 
+<Tab title="bridge.completed">
+
+Fires when a [bridge](/api-reference/bridge) settles, meaning the cNGN has been minted on the destination network. `network` is the destination network, `base_trx_hash` is the burn on the origin network, `extl_trx_hash` is the mint on the destination network, `receiver` is the destination address, and `amount` is the amount bridged before fees:
+
+```json
+{
+  "event": "bridge.completed",
+  "data": {
+    "transactionId": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+    "trx_ref": "b7c8d9e0-f1a2-4b3c-8d4e-5f6a7b8c9d0e",
+    "businessId": "4f1d0c2a-7b3e-4d5f-8a9b-0c1d2e3f4a5b",
+    "initiatorId": "7e6d5c4b-3a2f-4e1d-9c8b-7a6f5e4d3c2b",
+    "status": "completed",
+    "trx_type": "swap",
+    "network": "BASE",
+    "base_trx_hash": "d0c1b2a3f4e5d6c7b8a9f0e1d2c3b4a5f6e7d8c9b0a1f2e3d4c5b6a7f8e9d0c1",
+    "extl_trx_hash": "0x4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b",
+    "explorer_link": "https://basescan.org/tx/0x4a5b...4a5b",
+    "amount": "100000",
+    "asset_symbol": "CNGN",
+    "receiver": "0x8Ba1f109551bD432803012645Ac136ddd64DBA72",
+    "occurredAt": "2026-07-22T17:44:19.000Z"
+  },
+  "timestamp": "2026-07-22T17:44:19.402Z"
+}
+```
+
+A bridge that fails fires `transaction.failed` with `trx_type` `swap` instead.
+
+</Tab>
+
 <Tab title="transaction.failed">
 
 Fires when any transaction fails or is rejected. The shape depends on where in the pipeline it stopped.
@@ -348,14 +380,14 @@ Branch on `data.trx_type` to know what failed, and on `data.status` (`failed` vs
 
 ### Field presence by event
 
-| Field | deposit.received | deposit.completed | redemption.completed | withdrawal.completed | transaction.failed |
-| --- | --- | --- | --- | --- | --- |
-| `transactionId`, `trx_ref`, `businessId`, `initiatorId`, `status`, `trx_type`, `amount`, `asset_symbol`, `receiver`, `occurredAt` | Yes | Yes | Yes | Yes | Yes |
-| `network` | No | Yes | Yes | Yes | Sometimes |
-| `base_trx_hash` | No | Yes | No | Yes | Sometimes |
-| `extl_trx_hash` | No | On-chain deposits | No | Yes | No |
-| `explorer_link` | No | Yes | No | Yes | Sometimes |
-| `reason` | No | No | No | No | When known |
+| Field | deposit.received | deposit.completed | redemption.completed | withdrawal.completed | bridge.completed | transaction.failed |
+| --- | --- | --- | --- | --- | --- | --- |
+| `transactionId`, `trx_ref`, `businessId`, `initiatorId`, `status`, `trx_type`, `amount`, `asset_symbol`, `receiver`, `occurredAt` | Yes | Yes | Yes | Yes | Yes | Yes |
+| `network` | No | Yes | Yes | Yes | Yes | Sometimes |
+| `base_trx_hash` | No | Yes | No | Yes | Yes | Sometimes |
+| `extl_trx_hash` | No | On-chain deposits | No | Yes | Yes | No |
+| `explorer_link` | No | Yes | No | Yes | Yes | Sometimes |
+| `reason` | No | No | No | No | No | When known |
 
 ## Verifying the signature
 
