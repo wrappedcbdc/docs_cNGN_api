@@ -19,7 +19,7 @@ to provision a capsule for your business.
 ## Endpoint
 
 ```text
-https://cngn-mcp.102.209.46.161.nip.io/mcp
+https://mcp.cngn.com/mcp
 ```
 
 Authentication uses a cNGN **capsule** as a bearer token. A capsule is not an
@@ -37,7 +37,7 @@ environment.
 
     ```bash
     claude mcp add --transport http cngn \
-      https://cngn-mcp.102.209.46.161.nip.io/mcp \
+      https://mcp.cngn.com/mcp \
       --header "Authorization: Bearer YOUR_CNGN_CAPSULE"
     ```
 
@@ -49,7 +49,7 @@ environment.
       "mcpServers": {
         "cngn": {
           "type": "http",
-          "url": "https://cngn-mcp.102.209.46.161.nip.io/mcp",
+          "url": "https://mcp.cngn.com/mcp",
           "headers": {
             "Authorization": "Bearer YOUR_CNGN_CAPSULE"
           }
