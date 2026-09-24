@@ -1,0 +1,127 @@
+---
+title: "MCP server"
+sidebarTitle: "MCP server"
+description: "Connect an AI agent to cNGN through the hosted MCP server."
+icon: "robot"
+---
+
+The cNGN MCP server exposes the cNGN Business API as tools for MCP-compatible
+AI agents. It handles cNGN request encryption, response decryption, scoped
+access, approval gates, and idempotency while keeping your cNGN credentials
+inside an encrypted capsule.
+
+<Info>
+The hosted server currently supports the cNGN TEST environment. Use a test
+capsule while integrating. Contact [support@cngn.co](mailto:support@cngn.co)
+to provision a capsule for your business.
+</Info>
+
+## Endpoint
+
+```text
+https://mcp.cngn.co/mcp
+```
+
+Authentication uses a cNGN **capsule** as a bearer token. A capsule is not an
+API key. It is an encrypted, time-limited credential issued for one business,
+environment, and set of tool scopes. Keep it in a server-side secret store.
+
+Before a capsule can reach the cNGN API, add the MCP server's static egress IP
+`102.209.46.161` to your business's cNGN dashboard allowlist for the matching
+environment.
+
+## Connect
+
+<Tabs>
+  <Tab title="Claude Code">
+
+    ```bash
+    claude mcp add --transport http cngn \
+      https://mcp.cngn.co/mcp \
+      --header "Authorization: Bearer YOUR_CNGN_CAPSULE"
+    ```
+
+  </Tab>
+  <Tab title="Other MCP clients">
+
+    ```json
+    {
+      "mcpServers": {
+        "cngn": {
+          "type": "http",
+          "url": "https://mcp.cngn.co/mcp",
+          "headers": {
+            "Authorization": "Bearer YOUR_CNGN_CAPSULE"
+          }
+        }
+      }
+    }
+    ```
+
+  </Tab>
+</Tabs>
+
+## Available tools
+
+The capsule determines which tools your agent can call. Read-only capsules are
+the default. Write scopes are issued deliberately and require an approval flow.
+
+| Area | Tools |
+| --- | --- |
+| Wallet and history | Balance, transactions, networks |
+| Deposits | Get a virtual account, create a temporary virtual account |
+| Redemptions | List banks, verify account details, update bank details, redeem cNGN |
+| On-chain transfers | Verify a withdrawal, withdraw cNGN, get a bridge quote, bridge cNGN |
+| Address management | List and add whitelisted wallet addresses |
+
+The server also provides `cngn://networks` and `cngn://banks` resources so an
+agent can resolve current network IDs and bank codes before it prepares an
+operation.
+
+## Approval flows
+
+Read operations execute immediately when their scopes permit them. Operations
+that create, move, or change value return a preview first.
+
+<CardGroup cols={2}>
+  <Card title="Confirmation" icon="circle-check">
+    The preview returns `confirm_required: true` and an `intent_token`. Call
+    the same tool again with `confirm: true` and that token to execute exactly
+    the previewed operation.
+  </Card>
+  <Card title="Passkey approval" icon="fingerprint">
+    A manual-policy capsule returns `approval_required: true` and an approval
+    URL. A human completes the passkey ceremony before the agent can execute
+    the matching intent.
+  </Card>
+</CardGroup>
+
+Intent tokens are short-lived, bound to the exact parameters, and single use.
+Do not change an amount, destination, or other parameter between preview and
+confirmation.
+
+## Credential and key setup
+
+The MCP server needs the same cNGN credentials as a direct API integration:
+an environment-specific API key, dashboard encryption key, and Ed25519 SSH
+private key. The public half of the SSH key must be uploaded in the cNGN
+dashboard for that environment. See [Quickstart](/quickstart) and
+[Generating SSH keys](/guides/security/generating-ssh-keys).
+
+Do not send these credentials to an AI client. An authorized operator seals
+them in the capsule, which the server decrypts only inside its private
+executor for the duration of an upstream call.
+
+## Errors and limits
+
+- `401` means the capsule is expired, revoked, malformed, or issued for a
+  different MCP endpoint.
+- A scope error means the capsule was not granted access to that tool.
+- An IP allowlist error means `102.209.46.161` is absent from the cNGN
+  dashboard allowlist for that business and environment.
+- Upstream cNGN errors retain their safe message. Resolve network IDs at
+  runtime and use the preview and confirmation flow for all writes.
+
+For direct REST integrations, use the [official SDKs](/sdks). The MCP server
+is for agent-driven workflows that benefit from scoped credentials and
+approval gates.
