@@ -4,6 +4,17 @@ description: "Notable changes and additions to the cNGN API and its documentatio
 icon: "clock-rotate-left"
 ---
 
+<Update label="October 28, 2026" description="API">
+  ## Customer metadata on temporary account webhooks
+
+  Fiat deposit webhooks for payments into a
+  [temporary virtual account](/api-reference/create-temporary-virtual-account) now include
+  a `metadata` field in `data`. It holds the `customer` (`name` and `email`) you supplied
+  when creating the account, so you can identify who made the transfer. It appears on
+  `deposit.received`, `deposit.completed`, and `transaction.failed`. See
+  [Webhooks](/guides/webhooks).
+</Update>
+
 <Update label="September 21, 2026" description="API">
   ## Get a single transaction
 

@@ -88,6 +88,7 @@ Every delivery is an HTTPS `POST` with the same JSON envelope:
     <ResponseField name="asset_symbol" type="string">`NGN` for fiat-side events, `CNGN` for on-chain events.</ResponseField>
     <ResponseField name="receiver" type="string">Recipient. Format varies by event; see the samples below.</ResponseField>
     <ResponseField name="reason" type="string">Failure reason. Present on `transaction.failed` when a cause is known.</ResponseField>
+    <ResponseField name="metadata" type="object">The `customer` you sent when creating a [temporary virtual account](/api-reference/create-temporary-virtual-account), as `{ "name", "email" }`. Present only on fiat deposit events (`deposit.received`, `deposit.completed`, and `transaction.failed` for a `fiat_buy`) paid into a temporary account. Use it to identify the customer who made the transfer.</ResponseField>
     <ResponseField name="occurredAt" type="string">ISO 8601 timestamp of the state change.</ResponseField>
   </Expandable>
 </ResponseField>
@@ -117,11 +118,17 @@ Fires when a fiat payment lands in your virtual account and is awaiting mint app
     "amount": "50000",
     "asset_symbol": "NGN",
     "receiver": "4f1d0c2a-7b3e-4d5f-8a9b-0c1d2e3f4a5b",
+    "metadata": {
+      "name": "Ada Obi",
+      "email": "ada@example.com"
+    },
     "occurredAt": "2026-07-22T14:32:11.000Z"
   },
   "timestamp": "2026-07-22T14:32:11.104Z"
 }
 ```
+
+When the payment was made into a [temporary virtual account](/api-reference/create-temporary-virtual-account), `metadata` carries the `customer` you supplied at creation, so you can tell which of your customers paid. It is omitted for payments into your dedicated virtual account.
 
 <Warning>
 Funds are confirmed received but cNGN has **not** been credited yet. Do not credit your customer on this event; wait for `deposit.completed`.
@@ -149,13 +156,17 @@ Fires when the deposit is approved and cNGN is minted to your balance. The mint 
     "amount": "50000",
     "asset_symbol": "NGN",
     "receiver": "4f1d0c2a-7b3e-4d5f-8a9b-0c1d2e3f4a5b",
+    "metadata": {
+      "name": "Ada Obi",
+      "email": "ada@example.com"
+    },
     "occurredAt": "2026-07-22T15:05:42.000Z"
   },
   "timestamp": "2026-07-22T15:05:42.310Z"
 }
 ```
 
-This is the event to credit your customer on. For fiat deposits, the pair (`deposit.received` then `deposit.completed`) shares the same `transactionId` and `trx_ref`.
+This is the event to credit your customer on. For fiat deposits, the pair (`deposit.received` then `deposit.completed`) shares the same `transactionId` and `trx_ref`, and, for temporary virtual accounts, the same `metadata`.
 
 For **on-chain deposits** (cNGN sent to your wallet from an external address), the same event fires with `trx_type: crypto_deposit` and `asset_symbol: CNGN`. There is no preceding `deposit.received`. Deposits arriving via an EVM or Solana network also carry `extl_trx_hash`, the transaction hash on the source network:
 
@@ -387,6 +398,7 @@ Branch on `data.trx_type` to know what failed, and on `data.status` (`failed` vs
 | `base_trx_hash` | No | Yes | No | Yes | Yes | Sometimes |
 | `extl_trx_hash` | No | On-chain deposits | No | Yes | Yes | No |
 | `explorer_link` | No | Yes | No | Yes | Yes | Sometimes |
+| `metadata` | Temporary accounts only | Temporary accounts only | No | No | No | Temporary account deposits only |
 | `reason` | No | No | No | No | No | When known |
 
 ## Verifying the signature

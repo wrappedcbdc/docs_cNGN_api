@@ -28,6 +28,10 @@ Requires the **Fiat Deposit** permission. The request body must be [encrypted](/
   </Expandable>
 </ParamField>
 
+<Tip>
+The `customer` object is saved with the account and returned as `metadata` on the [`deposit.received`, `deposit.completed`, and `transaction.failed` webhooks](/guides/webhooks) for the payment, so you can identify which customer made the transfer.
+</Tip>
+
 <ParamField body="accountName" type="string">
   Custom display name for the account (3–50 characters).
 </ParamField>
