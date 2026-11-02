@@ -39,7 +39,16 @@ Requires the **Swap** permission. The request body must be [encrypted](/guides/e
 </ResponseField>
 
 <ResponseField name="bridgeFee" type="string">
-  cNGN bridging service fee.
+  cNGN bridging service fee, in naira. How it is worked out depends on your account's
+  bridge pricing:
+
+  - **Percentage**: a share of `amount`, never more than your account's fee cap. For
+    example, 0.3% of ₦100,000 is ₦300, or less if your cap is lower.
+  - **Flat**: the same fixed amount on every bridge, whatever its size, and never more
+    than `amount`.
+
+  The quoted fee is the fee charged when you [bridge](/api-reference/bridge). Contact
+  cNGN support to change your pricing.
 </ResponseField>
 
 <RequestExample>

@@ -4,6 +4,15 @@ description: "Notable changes and additions to the cNGN API and its documentatio
 icon: "clock-rotate-left"
 ---
 
+<Update label="November 2, 2026" description="API">
+  ## Flat bridge fees
+
+  The bridge fee on an account can now be a flat amount per bridge, not only a
+  percentage of the amount bridged. Percentage pricing always comes with a fee cap. The
+  `bridgeFee` returned by [Bridge Quote](/api-reference/bridge-quote) is still the naira
+  amount you are charged, so integrations need no changes.
+</Update>
+
 <Update label="October 28, 2026" description="API">
   ## Customer metadata on temporary account webhooks
 
